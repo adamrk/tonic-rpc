@@ -15,7 +15,7 @@ struct MyMethod {
 }
 
 impl Method for MyMethod {
-    const CODEC_PATH: &'static str = "tonic_trivial::json_codec::MyCodec";
+    const CODEC_PATH: &'static str = "tonic_rpc::json_codec::MyCodec";
     type Comment = String;
 
     fn name(&self) -> &str {
@@ -49,7 +49,7 @@ struct MyService {
 }
 
 impl Service for MyService {
-    const CODEC_PATH: &'static str = "tonic_trivial::json_codec::MyCodec";
+    const CODEC_PATH: &'static str = "tonic_rpc::json_codec::MyCodec";
     type Comment = String;
     type Method = MyMethod;
 
@@ -68,31 +68,6 @@ impl Service for MyService {
     fn methods(&self) -> &[Self::Method] {
         &self.methods
     }
-}
-
-#[proc_macro]
-pub fn generate_code(_item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let method = MyMethod {
-        name: "count".to_string(),
-        identifier: "Count".to_string(),
-        client_streaming: false,
-        server_streaming: false,
-        request: quote! { super::CountRequest },
-        response: quote! { super::CountResponse },
-    };
-    let service = MyService {
-        name: "Count".to_string(),
-        package: "counter".to_string(),
-        identifier: "Count".to_string(),
-        methods: vec![method],
-    };
-    let client = tonic_build::client::generate(&service, "");
-    let server = tonic_build::server::generate(&service, "");
-    (quote! {
-        #client
-        #server
-    })
-    .into()
 }
 
 fn make_method(method: TraitItemMethod) -> MyMethod {
@@ -121,9 +96,7 @@ fn make_method(method: TraitItemMethod) -> MyMethod {
 
 #[proc_macro_attribute]
 pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
-    eprintln!("tokens: {}", item);
     let trait_ = parse_macro_input!(item as ItemTrait);
-    eprintln!("trait: {:?}", trait_);
     let name = trait_.ident.to_string();
     let methods: Vec<_> = trait_
         .items

@@ -1,5 +1,5 @@
 [package]
-name = "generate-macro"
+name = "tonic-rpc-macro"
 version = "0.1.0"
 authors = ["adamrk <ark.email@gmail.com>"]
 edition = "2018"
@@ -11,10 +11,6 @@ proc-macro = true
 
 [dependencies]
 syn = { version = "1.0", features = ["full"] }
-tonic = { version = "0.3", features = ["prost"] }
 tonic-build = "0.3"
 proc-macro2 = "1.0"
 quote = "1.0"
-
-[dev-dependencies]
-insta = "1.3"
