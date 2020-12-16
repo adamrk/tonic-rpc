@@ -12,6 +12,8 @@ struct MyMethod {
     pub server_streaming: bool,
     pub request: proc_macro2::TokenStream,
     pub response: proc_macro2::TokenStream,
+    pub generated_request: syn::Ident,
+    pub generated_response: syn::Ident,
 }
 
 impl Method for MyMethod {
@@ -37,7 +39,9 @@ impl Method for MyMethod {
         &self,
         _: &str,
     ) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
-        (self.request.clone(), self.response.clone())
+        let request = self.generated_request.clone();
+        let response = self.generated_response.clone();
+        (quote!{super::#request}, quote!{super::#response})
     }
 }
 
@@ -77,20 +81,26 @@ fn make_method(method: TraitItemMethod) -> MyMethod {
         panic!("Invalid rpc argument type");
     }
     let request = match args.pop() {
-        Some(Pair::End(FnArg::Typed(pat))) => pat.ty.into_token_stream(),
+        Some(Pair::End(FnArg::Typed(pat))) => {
+            pat.ty.to_token_stream()
+        }
         _ => panic!("Invalid rpc argument type"),
     };
     let response = match method.sig.output {
         ReturnType::Default => quote! { "()" },
-        ReturnType::Type(_arrow, ty) => ty.into_token_stream(),
+        ReturnType::Type(_arrow, ty) => {
+            ty.to_token_stream()
+        }
     };
     MyMethod {
         identifier: name.clone(),
-        name,
+        name: name.clone(),
         client_streaming: false,
         server_streaming: false,
         request,
         response,
+        generated_request: quote::format_ident!("__tonic_generated_{}_request", name.clone()),
+        generated_response: quote::format_ident!("__tonic_generated_{}_response", name.clone())
     }
 }
 
@@ -114,7 +124,19 @@ pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
     };
     let client = tonic_build::client::generate(&service, "");
     let server = tonic_build::server::generate(&service, "");
+    let types = service.methods.iter().map(|m| {
+        let request_name = m.generated_request.clone();
+        let request_type = m.request.clone();
+        let response_name = m.generated_response.clone();
+        let response_type = m.response.clone();
+        quote! {
+            type #request_name = #request_type;
+            type #response_name = #response_type;
+        }
+    });
+    let types = quote!{ #( #types )*};
     (quote! {
+        #types
         #client
         #server
     })

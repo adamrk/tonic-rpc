@@ -12,5 +12,6 @@ proc-macro = true
 [dependencies]
 syn = { version = "1.0", features = ["full"] }
 tonic-build = "0.3"
+# tonic-build = { path = "../../tonic/tonic-build" }
 proc-macro2 = "1.0"
 quote = "1.0"
