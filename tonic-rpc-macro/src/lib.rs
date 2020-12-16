@@ -76,6 +76,10 @@ impl Service for MyService {
 
 fn make_method(method: TraitItemMethod, trait_name: &str) -> MyMethod {
     let name = method.sig.ident.to_string();
+    let server_streaming = method
+        .attrs
+        .iter()
+        .any(|attr| attr.path.is_ident("server_streaming"));
     let mut args: Vec<_> = method.sig.inputs.into_pairs().collect();
     if args.len() != 1 {
         panic!("Invalid rpc argument type");
@@ -92,7 +96,7 @@ fn make_method(method: TraitItemMethod, trait_name: &str) -> MyMethod {
         identifier: name.clone(),
         name: name.clone(),
         client_streaming: false,
-        server_streaming: false,
+        server_streaming,
         request,
         response,
         generated_request: quote::format_ident!(
