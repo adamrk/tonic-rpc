@@ -41,7 +41,7 @@ impl Method for MyMethod {
     ) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
         let request = self.generated_request.clone();
         let response = self.generated_response.clone();
-        (quote!{super::#request}, quote!{super::#response})
+        (quote! {super::#request}, quote! {super::#response})
     }
 }
 
@@ -74,23 +74,19 @@ impl Service for MyService {
     }
 }
 
-fn make_method(method: TraitItemMethod) -> MyMethod {
+fn make_method(method: TraitItemMethod, trait_name: &str) -> MyMethod {
     let name = method.sig.ident.to_string();
     let mut args: Vec<_> = method.sig.inputs.into_pairs().collect();
     if args.len() != 1 {
         panic!("Invalid rpc argument type");
     }
     let request = match args.pop() {
-        Some(Pair::End(FnArg::Typed(pat))) => {
-            pat.ty.to_token_stream()
-        }
+        Some(Pair::End(FnArg::Typed(pat))) => pat.ty.to_token_stream(),
         _ => panic!("Invalid rpc argument type"),
     };
     let response = match method.sig.output {
         ReturnType::Default => quote! { "()" },
-        ReturnType::Type(_arrow, ty) => {
-            ty.to_token_stream()
-        }
+        ReturnType::Type(_arrow, ty) => ty.to_token_stream(),
     };
     MyMethod {
         identifier: name.clone(),
@@ -99,8 +95,16 @@ fn make_method(method: TraitItemMethod) -> MyMethod {
         server_streaming: false,
         request,
         response,
-        generated_request: quote::format_ident!("__tonic_generated_{}_request", name.clone()),
-        generated_response: quote::format_ident!("__tonic_generated_{}_response", name.clone())
+        generated_request: quote::format_ident!(
+            "__tonic_generated_{}_{}_request",
+            trait_name,
+            name.clone()
+        ),
+        generated_response: quote::format_ident!(
+            "__tonic_generated_{}_{}_response",
+            trait_name,
+            name.clone()
+        ),
     }
 }
 
@@ -112,7 +116,7 @@ pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
         .items
         .into_iter()
         .filter_map(|item| match item {
-            TraitItem::Method(method) => Some(make_method(method)),
+            TraitItem::Method(method) => Some(make_method(method, &name)),
             _ => None,
         })
         .collect();
@@ -134,7 +138,7 @@ pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
             type #response_name = #response_type;
         }
     });
-    let types = quote!{ #( #types )*};
+    let types = quote! { #( #types )*};
     (quote! {
         #types
         #client

@@ -31,12 +31,13 @@ pub async fn run_server() -> u16 {
     let mut listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
-    tokio::spawn( async move {
+    tokio::spawn(async move {
         tonic::transport::Server::builder()
             .add_service(math_server::MathServer::new(()))
-            .serve_with_incoming(listener.incoming()).await.unwrap();
-        }
-    );
+            .serve_with_incoming(listener.incoming())
+            .await
+            .unwrap();
+    });
     port
 }
 
@@ -45,11 +46,7 @@ async fn test_math_with_builtins() {
     let port = run_server().await;
     // Wait for server to start
     tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
-    let mut client =
-        math_client::MathClient::connect(format!(
-            "http://[::1]:{}",
-            port 
-        ))
+    let mut client = math_client::MathClient::connect(format!("http://[::1]:{}", port))
         .await
         .expect("Failed to connect");
 
