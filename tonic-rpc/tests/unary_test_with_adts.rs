@@ -12,7 +12,7 @@ pub enum IncResult {
     Incremented(i32),
 }
 
-#[tonic_rpc]
+#[tonic_rpc(json)]
 trait Increment {
     fn increment(arg: IncRequest) -> IncResult;
 }

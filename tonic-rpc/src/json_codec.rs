@@ -7,11 +7,11 @@ use tokio_serde::{Deserializer, Serializer};
 use tonic::Status;
 
 #[derive(Default, Clone, Copy)]
-pub struct MyEncoder<T> {
+pub struct Encoder<T> {
     _pd: PhantomData<T>,
 }
 
-impl<T> tonic::codec::Encoder for MyEncoder<T>
+impl<T> tonic::codec::Encoder for Encoder<T>
 where
     T: Serialize + Unpin,
 {
@@ -34,11 +34,11 @@ where
 }
 
 #[derive(Default, Clone, Copy)]
-pub struct MyDecoder<T> {
+pub struct Decoder<T> {
     _pd: PhantomData<T>,
 }
 
-impl<T> tonic::codec::Decoder for MyDecoder<T>
+impl<T> tonic::codec::Decoder for Decoder<T>
 where
     T: for<'a> Deserialize<'a> + Unpin,
 {
@@ -61,29 +61,29 @@ where
     }
 }
 
-pub struct MyCodec<T, U> {
+pub struct Codec<T, U> {
     _pd: PhantomData<(T, U)>,
 }
 
-impl<T, U> Default for MyCodec<T, U> {
+impl<T, U> Default for Codec<T, U> {
     fn default() -> Self {
         Self { _pd: PhantomData }
     }
 }
 
-impl<T, U> tonic::codec::Codec for MyCodec<T, U>
+impl<T, U> tonic::codec::Codec for Codec<T, U>
 where
     T: Send + Sync + Serialize + Unpin + 'static,
     U: Send + Sync + for<'a> Deserialize<'a> + Unpin + 'static,
 {
     type Encode = T;
     type Decode = U;
-    type Encoder = MyEncoder<T>;
-    type Decoder = MyDecoder<U>;
-    fn encoder(&mut self) -> MyEncoder<T> {
-        MyEncoder { _pd: PhantomData }
+    type Encoder = Encoder<T>;
+    type Decoder = Decoder<U>;
+    fn encoder(&mut self) -> Encoder<T> {
+        Encoder { _pd: PhantomData }
     }
-    fn decoder(&mut self) -> MyDecoder<U> {
-        MyDecoder { _pd: PhantomData }
+    fn decoder(&mut self) -> Decoder<U> {
+        Decoder { _pd: PhantomData }
     }
 }

@@ -42,6 +42,13 @@ impl RustDefMethod {
     }
 }
 
+trait RequestResponseTypes {
+    fn generated_request(&self) -> &proc_macro2::Ident;
+    fn generated_response(&self) -> &proc_macro2::Ident;
+    fn request(&self) -> &proc_macro2::TokenStream;
+    fn response(&self) -> &proc_macro2::TokenStream;
+}
+
 macro_rules! method_impl {
     ($name:ident, $codec:expr) => {
         struct $name(RustDefMethod);
@@ -52,7 +59,7 @@ macro_rules! method_impl {
             }
         }
 
-        impl $name {
+        impl RequestResponseTypes for $name {
             fn generated_request(&self) -> &proc_macro2::Ident {
                 &self.0.generated_request
             }
@@ -96,7 +103,10 @@ macro_rules! method_impl {
     };
 }
 
-method_impl!(JsonMethod, "tonic_rpc::json_codec::MyCodec");
+method_impl!(JsonMethod, "tonic_rpc::json_codec::Codec");
+method_impl!(BinCodeMethod, "tonic_rpc::bincode_codec::Codec");
+method_impl!(CborMethod, "tonic_rpc::cbor_codec::Codec");
+method_impl!(MessagePackMethod, "tonic_rpc::messagepack_codec::Codec");
 
 struct RustDefService<T> {
     pub name: String,
@@ -105,27 +115,36 @@ struct RustDefService<T> {
     pub methods: Vec<T>,
 }
 
-impl Service for RustDefService<JsonMethod> {
-    const CODEC_PATH: &'static str = "tonic_rpc::json_codec::MyCodec";
-    type Comment = String;
-    type Method = JsonMethod;
+macro_rules! service_impl {
+    ($name:ident, $codec:expr) => {
+        impl Service for RustDefService<$name> {
+            const CODEC_PATH: &'static str = $codec;
+            type Comment = String;
+            type Method = $name;
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-    fn package(&self) -> &str {
-        &self.package
-    }
-    fn identifier(&self) -> &str {
-        &self.identifier
-    }
-    fn comment(&self) -> &[Self::Comment] {
-        &[]
-    }
-    fn methods(&self) -> &[Self::Method] {
-        &self.methods
-    }
+            fn name(&self) -> &str {
+                &self.name
+            }
+            fn package(&self) -> &str {
+                &self.package
+            }
+            fn identifier(&self) -> &str {
+                &self.identifier
+            }
+            fn comment(&self) -> &[String] {
+                &[]
+            }
+            fn methods(&self) -> &[Self::Method] {
+                &self.methods
+            }
+        }
+    };
 }
+
+service_impl!(JsonMethod, "tonic_rpc::json_codec::Codec");
+service_impl!(BinCodeMethod, "tonic_rpc::bincode_codec::Codec");
+service_impl!(CborMethod, "tonic_rpc::cbor_codec::Codec");
+service_impl!(MessagePackMethod, "tonic_rpc::messagepack_codec::Codec");
 
 fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str) -> T {
     let name = method.sig.ident.to_string();
@@ -166,15 +185,18 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
     .into()
 }
 
-#[proc_macro_attribute]
-pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
+fn make_rpc<T>(item: TokenStream) -> TokenStream
+where
+    T: From<RustDefMethod> + RequestResponseTypes,
+    RustDefService<T>: Service,
+{
     let trait_ = parse_macro_input!(item as ItemTrait);
     let name = trait_.ident.to_string();
     let methods: Vec<_> = trait_
         .items
         .into_iter()
         .filter_map(|item| match item {
-            TraitItem::Method(method) => Some(make_method(method, &name)),
+            TraitItem::Method(method) => Some(make_method::<T>(method, &name)),
             _ => None,
         })
         .collect();
@@ -203,4 +225,16 @@ pub fn tonic_rpc(_attributes: TokenStream, item: TokenStream) -> TokenStream {
         #server
     })
     .into()
+}
+
+#[proc_macro_attribute]
+pub fn tonic_rpc(attributes: TokenStream, item: TokenStream) -> TokenStream {
+    match attributes.to_string().as_str() {
+        "json" => make_rpc::<JsonMethod>(item),
+        "bincode" => make_rpc::<BinCodeMethod>(item),
+        "cbor" => make_rpc::<CborMethod>(item),
+        "messagepack" => make_rpc::<MessagePackMethod>(item),
+        "" => panic!("No tonic_rpc codec given"),
+        other => panic!("Unrecognized tonic_rpc codec {}", other),
+    }
 }

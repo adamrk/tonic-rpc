@@ -1,7 +1,7 @@
 use tokio::sync::mpsc;
 use tonic_rpc::tonic_rpc;
 
-#[tonic_rpc]
+#[tonic_rpc(json)]
 trait Counter {
     #[server_streaming]
     fn count(args: i32) -> i32;

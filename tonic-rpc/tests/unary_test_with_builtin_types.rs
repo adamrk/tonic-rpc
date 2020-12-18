@@ -1,6 +1,6 @@
 use tonic_rpc::tonic_rpc;
 
-#[tonic_rpc]
+#[tonic_rpc(json)]
 trait Math {
     fn add(args: (i32, i32)) -> i32;
     fn geq(args: (f64, f64)) -> bool;
