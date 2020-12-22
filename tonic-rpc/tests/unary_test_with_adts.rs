@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tonic_rpc::tonic_rpc;
 
+mod util;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IncRequest {
     num: i32,
@@ -51,10 +53,8 @@ pub async fn run_server() -> u16 {
 
 #[tokio::test]
 async fn test_increment_with_adts() {
-    let port = run_server().await;
-    // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
-    let mut client = increment_client::IncrementClient::connect(format!("http://[::1]:{}", port))
+    let addr = util::run_server(increment_server::IncrementServer::new(())).await;
+    let mut client = increment_client::IncrementClient::connect(addr)
         .await
         .expect("Failed to connect");
 

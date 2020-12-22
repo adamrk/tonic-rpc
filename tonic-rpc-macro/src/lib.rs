@@ -152,6 +152,10 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         .attrs
         .iter()
         .any(|attr| attr.path.is_ident("server_streaming"));
+    let client_streaming = method
+        .attrs
+        .iter()
+        .any(|attr| attr.path.is_ident("client_streaming"));
     let mut args: Vec<_> = method.sig.inputs.into_pairs().collect();
     if args.len() != 1 {
         panic!("Invalid rpc argument type");
@@ -167,7 +171,7 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
     RustDefMethod {
         identifier: name.clone(),
         name: name.clone(),
-        client_streaming: false,
+        client_streaming,
         server_streaming,
         request,
         response,
