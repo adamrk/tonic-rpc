@@ -54,10 +54,8 @@ where
         src: &mut tonic::codec::DecodeBuf<'_>,
     ) -> Result<Option<Self::Item>, Self::Error> {
         let mut deserializer = C::default();
-        println!("{:?}", src);
         let mut bytes = bytes::BytesMut::new();
         bytes.extend_from_slice(&src.to_bytes());
-        println!("{:?}", bytes);
         let result = Pin::new(&mut deserializer)
             .deserialize(&bytes)
             .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))?;
