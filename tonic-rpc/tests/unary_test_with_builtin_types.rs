@@ -1,6 +1,8 @@
 use tonic_rpc::tonic_rpc;
 
-#[tonic_rpc]
+mod util;
+
+#[tonic_rpc(json)]
 trait Math {
     fn add(args: (i32, i32)) -> i32;
     fn geq(args: (f64, f64)) -> bool;
@@ -43,10 +45,8 @@ pub async fn run_server() -> u16 {
 
 #[tokio::test]
 async fn test_math_with_builtins() {
-    let port = run_server().await;
-    // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
-    let mut client = math_client::MathClient::connect(format!("http://[::1]:{}", port))
+    let addr = util::run_server(math_server::MathServer::new(())).await;
+    let mut client = math_client::MathClient::connect(addr)
         .await
         .expect("Failed to connect");
 
