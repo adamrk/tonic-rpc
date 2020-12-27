@@ -81,7 +81,7 @@ async fn main() {
         .expect("Failed to connect");
 
     /// Send a request.
-    let request = tonic::Request::new(IncRequest { num: 5 });
+    let request = IncRequest { num: 5 };
     let response = client
         .increment(request)
         .await

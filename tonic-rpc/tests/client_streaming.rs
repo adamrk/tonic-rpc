@@ -91,7 +91,7 @@ async fn test_client_stream_immediate_response() {
     .await;
     let mut client = store_client::StoreClient::connect(addr).await.unwrap();
     let (mut tx, rx) = mpsc::channel(1);
-    client.store(tonic::Request::new(rx)).await.unwrap();
+    client.store(rx).await.unwrap();
     tx.send("foo".to_string()).await.unwrap();
     tx.send("bar".to_string()).await.unwrap();
     tx.send("baz".to_string()).await.unwrap();

@@ -50,10 +50,10 @@ async fn test_math_with_builtins() {
         .await
         .expect("Failed to connect");
 
-    let request = tonic::Request::new((42i32, 35i32));
+    let request = (42i32, 35i32);
     let response = client.add(request).await.expect("Failed to send request");
     assert_eq!(77, response.into_inner());
-    let request = tonic::Request::new((23.1, 0.01));
+    let request = (23.1, 0.01);
     let response = client.geq(request).await.expect("Failed to send request");
     assert_eq!(true, response.into_inner());
 }
