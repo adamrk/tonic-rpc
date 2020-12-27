@@ -8,8 +8,7 @@ use tonic::Status;
 
 #[derive(Default, Clone, Copy)]
 pub struct Encoder<T, C> {
-    _pd_payload: PhantomData<T>,
-    _pd_codec: PhantomData<C>,
+    _pd: PhantomData<(T, C)>,
 }
 
 impl<T, C> tonic::codec::Encoder for Encoder<T, C>
@@ -37,8 +36,7 @@ where
 
 #[derive(Default, Clone, Copy)]
 pub struct Decoder<T, C> {
-    _pd_payload: PhantomData<T>,
-    _pd_codec: PhantomData<C>,
+    _pd: PhantomData<(T, C)>,
 }
 
 impl<T, C> tonic::codec::Decoder for Decoder<T, C>
@@ -87,16 +85,10 @@ where
     type Encoder = Encoder<T, E>;
     type Decoder = Decoder<U, D>;
     fn encoder(&mut self) -> Encoder<T, E> {
-        Encoder {
-            _pd_payload: PhantomData,
-            _pd_codec: PhantomData,
-        }
+        Encoder { _pd: PhantomData }
     }
     fn decoder(&mut self) -> Decoder<U, D> {
-        Decoder {
-            _pd_payload: PhantomData,
-            _pd_codec: PhantomData,
-        }
+        Decoder { _pd: PhantomData }
     }
 }
 
