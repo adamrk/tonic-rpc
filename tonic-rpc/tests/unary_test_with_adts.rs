@@ -28,10 +28,9 @@ impl increment_server::Increment for State {
         request: tonic::Request<IncRequest>,
     ) -> Result<tonic::Response<IncResult>, tonic::Status> {
         let arg = request.into_inner().num;
-        let result = if arg == i32::MAX {
-            IncResult::Overflow
-        } else {
-            IncResult::Incremented(arg + 1)
+        let result = match arg.checked_add(1) {
+            Some(result) => IncResult::Incremented(result),
+            None => IncResult::Overflow,
         };
         Ok(tonic::Response::new(result))
     }
