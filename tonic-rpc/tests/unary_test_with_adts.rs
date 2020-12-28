@@ -57,13 +57,13 @@ async fn test_increment_with_adts() {
         .await
         .expect("Failed to connect");
 
-    let request = tonic::Request::new(IncRequest { num: 5 });
+    let request = IncRequest { num: 5 };
     let response = client
         .increment(request)
         .await
         .expect("Failed to send request");
     assert_eq!(IncResult::Incremented(6), response.into_inner());
-    let request = tonic::Request::new(IncRequest { num: i32::MAX });
+    let request = IncRequest { num: i32::MAX };
     let response = client
         .increment(request)
         .await

@@ -86,24 +86,14 @@ async fn test_bidirectional() {
         .await
         .expect("Error connecting");
     let (mut tx, rx) = mpsc::channel(10);
-    let mut updates = client
-        .sub(tonic::Request::new(rx))
-        .await
-        .unwrap()
-        .into_inner();
+    let mut updates = client.sub(rx).await.unwrap().into_inner();
     tx.send("foo".to_string()).await.unwrap();
     client
-        .publish(tonic::Request::new((
-            "foo".to_string(),
-            "fooval".to_string(),
-        )))
+        .publish(("foo".to_string(), "fooval".to_string()))
         .await
         .unwrap();
     client
-        .publish(tonic::Request::new((
-            "bar".to_string(),
-            "barval".to_string(),
-        )))
+        .publish(("bar".to_string(), "barval".to_string()))
         .await
         .unwrap();
     assert_eq!(
@@ -116,10 +106,7 @@ async fn test_bidirectional() {
         updates.message().await.unwrap().unwrap()
     );
     client
-        .publish(tonic::Request::new((
-            "foo".to_string(),
-            "fooval2".to_string(),
-        )))
+        .publish(("foo".to_string(), "fooval2".to_string()))
         .await
         .unwrap();
     assert_eq!(

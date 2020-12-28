@@ -92,7 +92,7 @@ async fn test_server_stream_ends() {
         .await
         .expect("Failed to connect");
 
-    let request = tonic::Request::new((100_i32, 3_usize));
+    let request = (100_i32, 3_usize);
     let mut responses = client
         .count_n(request)
         .await
