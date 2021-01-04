@@ -6,6 +6,7 @@ mod util;
 trait Math {
     fn add(args: (i32, i32)) -> i32;
     fn geq(args: (f64, f64)) -> bool;
+    fn send(arg: bool);
 }
 
 type State = ();
@@ -26,6 +27,14 @@ impl math_server::Math for State {
     ) -> Result<tonic::Response<bool>, tonic::Status> {
         let (x, y) = request.into_inner();
         Ok(tonic::Response::new(x > y))
+    }
+
+    async fn send(
+        &self,
+        request: tonic::Request<bool>,
+    ) -> Result<tonic::Response<()>, tonic::Status> {
+        let _arg = request.into_inner();
+        Ok(tonic::Response::new(()))
     }
 }
 

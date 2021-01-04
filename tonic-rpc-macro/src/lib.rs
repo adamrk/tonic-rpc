@@ -165,7 +165,7 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         _ => panic!("Invalid rpc argument type"),
     };
     let response = match method.sig.output {
-        ReturnType::Default => quote! { "()" },
+        ReturnType::Default => quote! { () },
         ReturnType::Type(_arrow, ty) => ty.to_token_stream(),
     };
     RustDefMethod {
