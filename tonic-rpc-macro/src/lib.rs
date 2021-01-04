@@ -1,7 +1,11 @@
+use core::panic;
+
+use itertools::Itertools;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input, punctuated::Pair, FnArg, ItemTrait, ReturnType, TraitItem, TraitItemMethod,
+    Type,
 };
 use tonic_build::{Method, Service};
 
@@ -147,6 +151,15 @@ service_impl!(CborMethod, "tonic_rpc::codec::CborCodec");
 service_impl!(MessagePackMethod, "tonic_rpc::codec::MessagePackCodec");
 
 fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str) -> T {
+    fn extract_arg<P>(arg: Pair<FnArg, P>) -> Box<Type> {
+        match arg {
+            Pair::Punctuated(FnArg::Typed(pat), _) | Pair::End(FnArg::Typed(pat)) => pat.ty,
+            Pair::Punctuated(FnArg::Receiver(rec), _) | Pair::End(FnArg::Receiver(rec)) => panic!(
+                "Invalid RPC argument. 'self' arguments are not allowed: {}",
+                rec.to_token_stream()
+            ),
+        }
+    };
     let name = method.sig.ident.to_string();
     let server_streaming = method
         .attrs
@@ -156,13 +169,17 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         .attrs
         .iter()
         .any(|attr| attr.path.is_ident("client_streaming"));
-    let mut args: Vec<_> = method.sig.inputs.into_pairs().collect();
-    if args.len() != 1 {
-        panic!("Invalid rpc argument type");
-    }
-    let request = match args.pop() {
-        Some(Pair::End(FnArg::Typed(pat))) => pat.ty.to_token_stream(),
-        _ => panic!("Invalid rpc argument type"),
+    let args: Vec<_> = method.sig.inputs.into_pairs().map(extract_arg).collect();
+    let request = match args.len() {
+        1 => args[0].to_token_stream(),
+        _ => {
+            let tuple_fields: proc_macro2::TokenStream = args
+                .into_iter()
+                .map(|t| t.to_token_stream())
+                .intersperse(quote! {,})
+                .collect();
+            quote! { ( #tuple_fields )}
+        }
     };
     let response = match method.sig.output {
         ReturnType::Default => quote! { () },

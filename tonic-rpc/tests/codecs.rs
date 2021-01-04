@@ -2,22 +2,22 @@ use tonic_rpc::tonic_rpc;
 
 #[tonic_rpc(json)]
 trait MathJson {
-    fn add(args: (i32, i32)) -> i32;
+    fn add(x: i32, y: i32) -> i32;
 }
 
 #[tonic_rpc(cbor)]
 trait MathCbor {
-    fn add(args: (i32, i32)) -> i32;
+    fn add(x: i32, y: i32) -> i32;
 }
 
 #[tonic_rpc(bincode)]
 trait MathBincode {
-    fn add(args: (i32, i32)) -> i32;
+    fn add(x: i32, y: i32) -> i32;
 }
 
 #[tonic_rpc(messagepack)]
 trait MathMessagePack {
-    fn add(args: (i32, i32)) -> i32;
+    fn add(x: i32, y: i32) -> i32;
 }
 
 type State = ();

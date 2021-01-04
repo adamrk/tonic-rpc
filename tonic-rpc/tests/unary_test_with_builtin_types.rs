@@ -4,8 +4,8 @@ mod util;
 
 #[tonic_rpc(json)]
 trait Math {
-    fn add(args: (i32, i32)) -> i32;
-    fn geq(args: (f64, f64)) -> bool;
+    fn add(x: i32, y: i32) -> i32;
+    fn geq(left: f64, rigt: f64) -> bool;
     fn send(arg: bool);
 }
 
@@ -36,20 +36,6 @@ impl math_server::Math for State {
         let _arg = request.into_inner();
         Ok(tonic::Response::new(()))
     }
-}
-
-pub async fn run_server() -> u16 {
-    let mut listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
-    let port = listener.local_addr().unwrap().port();
-
-    tokio::spawn(async move {
-        tonic::transport::Server::builder()
-            .add_service(math_server::MathServer::new(()))
-            .serve_with_incoming(listener.incoming())
-            .await
-            .unwrap();
-    });
-    port
 }
 
 #[tokio::test]

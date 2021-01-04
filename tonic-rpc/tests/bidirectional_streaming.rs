@@ -14,7 +14,7 @@ trait PubSub {
     #[client_streaming]
     fn sub(channel: String) -> (String, String);
 
-    fn publish(kvp: (String, String)) -> ();
+    fn publish(chanenl: String, value: String) -> ();
 }
 
 #[derive(Debug)]
