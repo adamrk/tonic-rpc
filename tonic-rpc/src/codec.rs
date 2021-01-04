@@ -1,21 +1,29 @@
 use std::marker::PhantomData;
-use std::pin::Pin;
 
-use bytes::{Buf, BufMut};
-use serde::{Deserialize, Serialize};
-use tokio_serde::{Deserializer, Serializer};
+use bytes::buf::{BufExt, BufMutExt};
 use tonic::Status;
 
-#[derive(Default, Clone, Copy)]
-pub struct Encoder<T, C> {
-    _pd: PhantomData<(T, C)>,
+pub trait SerdeCodec {
+    fn write<T, W>(item: T, w: W) -> Result<(), tonic::Status>
+    where
+        T: serde::Serialize,
+        W: std::io::Write;
+
+    fn read<T, R>(r: R) -> Result<T, tonic::Status>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        R: std::io::Read;
 }
 
-impl<T, C> tonic::codec::Encoder for Encoder<T, C>
+#[derive(Clone, Copy)]
+pub struct Encoder<C, T> {
+    _pd: PhantomData<(C, T)>,
+}
+
+impl<C, T> tonic::codec::Encoder for Encoder<C, T>
 where
-    T: Serialize + Unpin,
-    C: Serializer<T> + std::default::Default + Unpin,
-    C::Error: std::fmt::Display,
+    T: serde::Serialize,
+    C: SerdeCodec,
 {
     type Item = T;
     type Error = tonic::Status;
@@ -24,26 +32,19 @@ where
         item: Self::Item,
         dst: &mut tonic::codec::EncodeBuf<'_>,
     ) -> Result<(), Self::Error> {
-        let mut serializer: C = C::default();
-        let bytes = Pin::new(&mut serializer)
-            .serialize(&item)
-            .map_err(|serde_err| {
-                Status::internal(format!("Error in serde deserialize {}", serde_err))
-            })?;
-        Ok(dst.put(bytes))
+        C::write(item, dst.writer())
     }
 }
 
-#[derive(Default, Clone, Copy)]
-pub struct Decoder<T, C> {
-    _pd: PhantomData<(T, C)>,
+#[derive(Clone, Copy)]
+pub struct Decoder<C, T> {
+    _pd: PhantomData<(C, T)>,
 }
 
-impl<T, C> tonic::codec::Decoder for Decoder<T, C>
+impl<C, T> tonic::codec::Decoder for Decoder<C, T>
 where
-    T: for<'a> Deserialize<'a> + Unpin,
-    C: Deserializer<T> + std::default::Default + Unpin,
-    C::Error: std::fmt::Display,
+    T: for<'de> serde::Deserialize<'de>,
+    C: SerdeCodec,
 {
     type Item = T;
     type Error = tonic::Status;
@@ -51,52 +52,128 @@ where
         &mut self,
         src: &mut tonic::codec::DecodeBuf<'_>,
     ) -> Result<Option<Self::Item>, Self::Error> {
-        let mut deserializer = C::default();
-        let mut bytes = bytes::BytesMut::new();
-        bytes.extend_from_slice(&src.to_bytes());
-        let result = Pin::new(&mut deserializer)
-            .deserialize(&bytes)
-            .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))?;
-        Ok(Some(result))
+        Ok(Some(C::read::<T, _>(src.reader())?))
     }
 }
 
-pub struct Codec<T, U, E, D> {
-    _pd: PhantomData<(T, U, E, D)>,
+pub struct Codec<C, T, U> {
+    _pd: PhantomData<(C, T, U)>,
 }
 
-impl<T, U, E, D> Default for Codec<T, U, E, D> {
+impl<C, T, U> Default for Codec<C, T, U> {
     fn default() -> Self {
-        Self { _pd: PhantomData }
+        Codec { _pd: PhantomData }
     }
 }
 
-impl<T, U, E, D> tonic::codec::Codec for Codec<T, U, E, D>
+impl<C, T, U> tonic::codec::Codec for Codec<C, T, U>
 where
-    T: Send + Sync + Serialize + Unpin + 'static,
-    U: Send + Sync + for<'a> Deserialize<'a> + Unpin + 'static,
-    E: Serializer<T> + std::default::Default + Unpin + Send + Sync + 'static,
-    E::Error: std::fmt::Display,
-    D: Deserializer<U> + std::default::Default + Unpin + Send + Sync + 'static,
-    D::Error: std::fmt::Display,
+    C: SerdeCodec + Send + Sync + 'static,
+    T: serde::Serialize + Send + Sync + 'static,
+    U: for<'de> serde::Deserialize<'de> + Send + Sync + 'static,
 {
     type Encode = T;
     type Decode = U;
-    type Encoder = Encoder<T, E>;
-    type Decoder = Decoder<U, D>;
-    fn encoder(&mut self) -> Encoder<T, E> {
+    type Encoder = Encoder<C, T>;
+    type Decoder = Decoder<C, U>;
+
+    fn encoder(&mut self) -> Self::Encoder {
         Encoder { _pd: PhantomData }
     }
-    fn decoder(&mut self) -> Decoder<U, D> {
+
+    fn decoder(&mut self) -> Self::Decoder {
         Decoder { _pd: PhantomData }
     }
 }
 
-pub type JsonCodec<T, U> =
-    Codec<T, U, tokio_serde::formats::Json<T, T>, tokio_serde::formats::Json<U, U>>;
-pub type BincodeCodec<T, U> =
-    Codec<T, U, tokio_serde::formats::Bincode<T, T>, tokio_serde::formats::Bincode<U, U>>;
-pub type CborCodec<T, U> =
-    Codec<T, U, tokio_serde::formats::Cbor<T, T>, tokio_serde::formats::Cbor<U, U>>;
-pub type MessagePackCodec<T, U> =
-    Codec<T, U, tokio_serde::formats::MessagePack<T, T>, tokio_serde::formats::MessagePack<U, U>>;
+pub struct BincodeSerdeCodec;
+pub struct CborSerdeCodec;
+pub struct JsonSerdeCodec;
+pub struct MessagePackSerdeCodec;
+
+impl SerdeCodec for BincodeSerdeCodec {
+    fn write<T, W>(item: T, w: W) -> Result<(), Status>
+    where
+        T: serde::Serialize,
+        W: std::io::Write,
+    {
+        bincode::serialize_into(w, &item)
+            .map_err(|bincode_err| Status::internal(format!("Error serializing {}", bincode_err)))
+    }
+
+    fn read<T, R>(r: R) -> Result<T, Status>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        R: std::io::Read,
+    {
+        bincode::deserialize_from(r)
+            .map_err(|bincode_err| Status::internal(format!("Error deserializing {}", bincode_err)))
+    }
+}
+
+impl SerdeCodec for CborSerdeCodec {
+    fn write<T, W>(item: T, w: W) -> Result<(), Status>
+    where
+        T: serde::Serialize,
+        W: std::io::Write,
+    {
+        serde_cbor::to_writer(w, &item)
+            .map_err(|serde_err| Status::internal(format!("Error serializing {}", serde_err)))
+    }
+
+    fn read<T, R>(r: R) -> Result<T, Status>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        R: std::io::Read,
+    {
+        serde_cbor::from_reader(r)
+            .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))
+    }
+}
+
+impl SerdeCodec for JsonSerdeCodec {
+    fn write<T, W>(item: T, w: W) -> Result<(), Status>
+    where
+        T: serde::Serialize,
+        W: std::io::Write,
+    {
+        serde_json::to_writer(w, &item)
+            .map_err(|serde_err| Status::internal(format!("Error serializing {}", serde_err)))
+    }
+
+    fn read<T, R>(r: R) -> Result<T, Status>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        R: std::io::Read,
+    {
+        serde_json::from_reader(r)
+            .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))
+    }
+}
+
+impl SerdeCodec for MessagePackSerdeCodec {
+    fn write<T, W>(item: T, mut w: W) -> Result<(), Status>
+    where
+        T: serde::Serialize,
+        W: std::io::Write,
+    {
+        rmp_serde::encode::write(&mut w, &item).map_err(|message_pack_err| {
+            Status::internal(format!("Error serializing {}", message_pack_err))
+        })
+    }
+
+    fn read<T, R>(r: R) -> Result<T, Status>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        R: std::io::Read,
+    {
+        rmp_serde::from_read(r).map_err(|message_pack_err| {
+            Status::internal(format!("Error deserializing {}", message_pack_err))
+        })
+    }
+}
+
+pub type BincodeCodec<T, U> = Codec<BincodeSerdeCodec, T, U>;
+pub type CborCodec<T, U> = Codec<CborSerdeCodec, T, U>;
+pub type JsonCodec<T, U> = Codec<JsonSerdeCodec, T, U>;
+pub type MessagePackCodec<T, U> = Codec<MessagePackSerdeCodec, T, U>;
