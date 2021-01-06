@@ -6,9 +6,9 @@ mod util;
 #[tonic_rpc(json)]
 trait Counter {
     #[server_streaming]
-    fn count(args: i32) -> i32;
+    fn count(start: i32) -> i32;
     #[server_streaming]
-    fn count_n(args: (i32, usize)) -> i32;
+    fn count_n(start: i32, values_count: usize) -> i32;
 }
 
 type State = ();
