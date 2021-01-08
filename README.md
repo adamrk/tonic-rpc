@@ -17,7 +17,7 @@ tonic-rpc = <tonic-rpc-version>
 
 # Example
 Instead of defining a `proto`, define a service as a trait:
-```no_run
+```rust
 #[tonic_rpc::tonic_rpc(json)]
 trait Increment {
     fn increment(arg: i32) -> i32;
@@ -29,7 +29,7 @@ The arguments and return values for each function must implement
 `serde::Serialize` and `serde::Deserialize`.
 
 The service can be implemented by defining and `impl`:
-```no_run
+```rust
 struct State;
 
 #[tonic::async_trait]
@@ -44,7 +44,7 @@ impl increment_server::Increment for State {
 ```
 
 And a server and client can be run:
-```no_run
+```rust
 async fn run_client_server() {
     let mut listener = tokio::net::TcpListener::bind("[::1]:8080").await.unwrap();
     let addr = listener.local_addr().unwrap();
