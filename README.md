@@ -1,90 +1,80 @@
-# Tonic-RPC
+`tonic-rpc` is a macro that generates the traits and stubs used by [`tonic`](https://crates.io/crates/tonic)
+from Rust definitions instead of `proto` files.
 
-A macro that allows you to use [`tonic`](https://crates.io/crates/tonic) by defining your RPC interfaces in pure Rust code instead of using [`protobuf`](https://developers.google.com/protocol-buffers). When your service doesn't have clients written in other languages this allows you use the full power of the Rust type system in you RPC interface.
+This means that you can get all the [benefits](https://github.com/hyperium/tonic#features)
+of `tonic` while using regular Rust types and without needing to use `proto` files or build scripts.
+Of course, this comes at the sacrifice of interoporability.
 
-# Examples
-Further examples can be found in the [`tests`](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests) folder.
+# Alternatives
+[`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services using
+as a Rust trait.
 
-The following is an example where clients send an `i32` and the server responds by incrementing the `i32`.
-
-### Define the RPC Interface
-```rust
-use serde::{Deserialize, Serialize};
-use tonic_rpc::tonic_rpc;
-
-/// The type sent by clients in an RPC request.
-/// It must implement `Serialize`/`Deserialize`.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct IncRequest {
-    num: i32,
-}
-
-/// The response returned by the server.
-/// It must also implement `Serialize`/`Deserialize`.
-/// We can use an enum to show that the calculation might fail due to overflow.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum IncResult {
-    Overflow,
-    Incremented(i32),
-}
-
-/// The `tonic_rpc` attribute says that we want to build an RPC defined by this trait.
-/// The `json` option says that we should use the `tokio-serde` Json codec for serialization.
-#[tonic_rpc(json)]
-trait Increment {
-    /// Our service will have a single endpoint which responds to an `IncRequest` with an `IncResult`.
-    fn increment(arg: IncRequest) -> IncResult;
-}
+# Required dependencies
+```toml
+tonic = <tonic-version>
+tonic-rpc = <tonic-rpc-version>
 ```
 
-### Implement the Server
+# Example
+Instead of defining a `proto`, define a service as a trait:
+```no_run
+#[tonic_rpc::tonic_rpc(json)]
+trait Increment {
+    fn increment(arg: i32) -> i32;
+}
+```
+The attribute `#[tonic_rpc(json)]` indicates that this service
+will serialize the requests and responses using `json`.
+The arguments and return values for each function must implement
+`serde::Serialize` and `serde::Deserialize`.
 
-```rust
-/// Our server doesn't need any state.
-type State = ();
+The service can be implemented by defining and `impl`:
+```no_run
+struct State;
 
-/// The implementation of our service is done just as for a `tonic` service that was defined using `protobuf`.
 #[tonic::async_trait]
 impl increment_server::Increment for State {
-    /// The request type gets wrapped in a `tonic::Request`.
-    /// The response type gets wrapped in a `Result<tonic::Response<_>, tonic::Status>`.
     async fn increment(
         &self,
-        request: tonic::Request<IncRequest>,
-    ) -> Result<tonic::Response<IncResult>, tonic::Status> {
-        let arg = request.into_inner().num;
-        let result = match arg.checked_add(1) {
-            Some(result) => IncResult::Incremented(result),
-            None => IncResult::Overflow,
-        };
-        Ok(tonic::Response::new(result))
+        request: tonic::Request<i32>,
+    ) -> Result<tonic::Response<i32>, tonic::Status> {
+        Ok(tonic::Response::new(request.into_inner() + 1))
     }
 }
+```
 
-/// Run the server.
-#[tokio::main]
-async fn main() {
+And a server and client can be run:
+```no_run
+async fn run_client_server() {
     let mut listener = tokio::net::TcpListener::bind("[::1]:8080").await.unwrap();
-    tonic::transport::Server::builder()
-        .add_service(increment_server::IncrementServer::new(()))
-        .serve_with_incoming(listener.incoming())
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        tonic::transport::Server::builder()
+            .add_service(increment_server::IncrementServer::new(State))
+            .serve_with_incoming(listener.incoming())
+            .await
+    });
+    let mut client = increment_client::IncrementClient::connect(format!("http://{}", addr))
         .await
         .unwrap();
+    let response = client.increment(32).await.unwrap().into_inner();
+    assert_eq!(33, response);
 }
 ```
 
-### Send a Request
-```rust
-    /// Create a client.
-    let mut client = increment_client::IncrementClient::connect("[::1]:8080")
-        .await
-        .expect("Failed to connect");
+The full example is available [here](https://github.com/adamrk/tonic-rpc/tree/main/example).
+Further examples are available in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
 
-    /// Send a request.
-    let request = IncRequest { num: 5 };
-    let response = client
-        .increment(request)
-        .await
-        .expect("Failed to send request");
-    assert_eq!(IncResult::Incremented(6), response.into_inner());
-```
+# Encodings
+The available encodings are:
+- `bincode` - using [`bincode`](https://crates.io/crates/bincode)
+- `cbor` - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
+- `json` - using [`serde_json`](https://crates.io/crates/serde_json)
+- `messagepack` - using [`rmp-serde`](https://crates.io/crates/rmp-serde)
+
+# Streaming
+Streaming can be added on the client or server side by adding the attributes
+`#[client_streaming]` or `#[server_streaming]` to a function in the service trait.
+These behave the same as if the `stream` keyword were added to a `proto` definition.
+
+Examples that use streaming can be found in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
