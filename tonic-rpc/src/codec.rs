@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use bytes::buf::{BufExt, BufMutExt};
+use bytes::{buf::BufMut, Buf};
 use tonic::Status;
 
 pub trait SerdeCodec {

@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -64,7 +65,7 @@ impl store_server::Store for StoreState {
         args: tonic::Request<tonic::Streaming<String>>,
     ) -> Result<tonic::Response<()>, tonic::Status> {
         let mut requests = args.into_inner();
-        let mut store_copy = self.clone();
+        let store_copy = self.clone();
         tokio::spawn(async move {
             let mut count = 0;
             while let Some(request) = requests.message().await.unwrap() {
@@ -90,8 +91,8 @@ async fn test_client_stream_immediate_response() {
     }))
     .await;
     let mut client = store_client::StoreClient::connect(addr).await.unwrap();
-    let (mut tx, rx) = mpsc::channel(1);
-    client.store(rx).await.unwrap();
+    let (tx, rx) = mpsc::channel(1);
+    client.store(ReceiverStream::new(rx)).await.unwrap();
     tx.send("foo".to_string()).await.unwrap();
     tx.send("bar".to_string()).await.unwrap();
     tx.send("baz".to_string()).await.unwrap();

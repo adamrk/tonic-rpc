@@ -72,7 +72,7 @@
 //!     tokio::spawn(async move {
 //!         tonic::transport::Server::builder()
 //!             .add_service(increment_server::IncrementServer::new(State))
-//!             .serve_with_incoming(listener.incoming())
+//!             .serve_with_incoming(tokio_stream::wrappers::TcpListenerStream::new(listener))
 //!             .await
 //!     });
 //!     let mut client = increment_client::IncrementClient::connect(format!("http://{}", addr))

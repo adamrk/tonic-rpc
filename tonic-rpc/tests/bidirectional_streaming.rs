@@ -4,6 +4,7 @@ use std::{
 };
 
 use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -26,14 +27,14 @@ struct State {
 
 #[tonic::async_trait]
 impl pub_sub_server::PubSub for State {
-    type subStream = mpsc::Receiver<Result<(String, String), tonic::Status>>;
+    type subStream = ReceiverStream<Result<(String, String), tonic::Status>>;
 
     async fn sub(
         &self,
         channels: tonic::Request<tonic::Streaming<String>>,
     ) -> Result<tonic::Response<Self::subStream>, tonic::Status> {
         let mut channels = channels.into_inner();
-        let (mut tx, rx) = mpsc::channel(20);
+        let (tx, rx) = mpsc::channel(20);
         let subscribers = Arc::clone(&self.subscribers);
         let data = Arc::clone(&self.data);
         tokio::spawn(async move {
@@ -52,7 +53,7 @@ impl pub_sub_server::PubSub for State {
                     .push(tx.clone());
             }
         });
-        Ok(tonic::Response::new(rx))
+        Ok(tonic::Response::new(ReceiverStream::new(rx)))
     }
 
     async fn publish(
@@ -65,7 +66,7 @@ impl pub_sub_server::PubSub for State {
             let subscribers = self.subscribers.lock().unwrap();
             subscribers.get(&key).unwrap_or(&vec![]).clone()
         };
-        for mut subscriber in to_send {
+        for subscriber in to_send {
             subscriber
                 .send(Ok((key.clone(), value.clone())))
                 .await
@@ -85,8 +86,12 @@ async fn test_bidirectional() {
     let mut client = pub_sub_client::PubSubClient::connect(addr)
         .await
         .expect("Error connecting");
-    let (mut tx, rx) = mpsc::channel(10);
-    let mut updates = client.sub(rx).await.unwrap().into_inner();
+    let (tx, rx) = mpsc::channel(10);
+    let mut updates = client
+        .sub(ReceiverStream::new(rx))
+        .await
+        .unwrap()
+        .into_inner();
     tx.send("foo".to_string()).await.unwrap();
     client
         .publish(("foo".to_string(), "fooval".to_string()))

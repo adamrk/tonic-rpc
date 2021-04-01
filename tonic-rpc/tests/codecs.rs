@@ -1,3 +1,4 @@
+use tokio_stream::wrappers::TcpListenerStream;
 use tonic_rpc::tonic_rpc;
 
 #[tonic_rpc(json)]
@@ -67,7 +68,7 @@ impl math_message_pack_server::MathMessagePack for State {
 }
 
 pub async fn run_server() -> u16 {
-    let mut listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
@@ -76,7 +77,7 @@ pub async fn run_server() -> u16 {
             .add_service(math_cbor_server::MathCborServer::new(()))
             .add_service(math_bincode_server::MathBincodeServer::new(()))
             .add_service(math_message_pack_server::MathMessagePackServer::new(()))
-            .serve_with_incoming(listener.incoming())
+            .serve_with_incoming(TcpListenerStream::new(listener))
             .await
             .unwrap();
     });
@@ -87,7 +88,7 @@ pub async fn run_server() -> u16 {
 async fn test_json_codec() {
     let port = run_server().await;
     // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
     let mut client = math_json_client::MathJsonClient::connect(format!("http://[::1]:{}", port))
         .await
         .expect("Failed to connect");
@@ -106,7 +107,7 @@ async fn test_json_codec() {
 async fn test_cbor_codec() {
     let port = run_server().await;
     // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
     let mut client = math_cbor_client::MathCborClient::connect(format!("http://[::1]:{}", port))
         .await
         .expect("Failed to connect");
@@ -125,7 +126,7 @@ async fn test_cbor_codec() {
 async fn test_bincode_codec() {
     let port = run_server().await;
     // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
     let mut client =
         math_bincode_client::MathBincodeClient::connect(format!("http://[::1]:{}", port))
             .await
@@ -145,7 +146,7 @@ async fn test_bincode_codec() {
 async fn test_message_pack_codec() {
     let port = run_server().await;
     // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
     let mut client =
         math_message_pack_client::MathMessagePackClient::connect(format!("http://[::1]:{}", port))
             .await
