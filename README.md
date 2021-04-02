@@ -1,22 +1,23 @@
-`tonic-rpc` is a macro that generates the traits and stubs used by [`tonic`](https://crates.io/crates/tonic)
-from Rust definitions instead of `proto` files.
+`tonic-rpc` is a macro that generates the traits and stubs used by
+[`tonic`](https://crates.io/crates/tonic) from pure Rust service definitions
+instead of `proto` files.
 
 This means that you can get all the [benefits](https://github.com/hyperium/tonic#features)
-of `tonic` while using regular Rust types and without needing to use `proto` files or build scripts.
-Of course, this comes at the sacrifice of interoporability.
+of `tonic` while using native Rust types and without needing to use `proto`
+files or build scripts.
+Of course, this comes at the expense of interoperability with other languages.
 
 # Alternatives
-[`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services using
-as a Rust trait.
+[`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also
+defines services as Rust traits.
 
 # Required dependencies
 ```toml
-tonic = <tonic-version>
-tonic-rpc = <tonic-rpc-version>
+tonic = "0.4"
 ```
 
 # Example
-Instead of defining a `proto`, define a service as a trait:
+Instead of defining a `proto` service, define a service as a trait:
 ```rust
 #[tonic_rpc::tonic_rpc(json)]
 trait Increment {
@@ -51,7 +52,7 @@ async fn run_client_server() {
     tokio::spawn(async move {
         tonic::transport::Server::builder()
             .add_service(increment_server::IncrementServer::new(State))
-            .serve_with_incoming(listener.incoming())
+            .serve_with_incoming(tokio_stream::wrappers::TcpListenerStream(listener))
             .await
     });
     let mut client = increment_client::IncrementClient::connect(format!("http://{}", addr))
@@ -77,4 +78,5 @@ Streaming can be added on the client or server side by adding the attributes
 `#[client_streaming]` or `#[server_streaming]` to a function in the service trait.
 These behave the same as if the `stream` keyword were added to a `proto` definition.
 
-Examples that use streaming can be found in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
+Examples that use streaming can be found in the
+[tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
