@@ -1,3 +1,5 @@
+use tokio_stream::wrappers::TcpListenerStream;
+
 /// Returns the address to connect to.
 pub async fn run_server<S>(svc: S) -> String
 where
@@ -11,19 +13,19 @@ where
     S::Future: Send + 'static,
     S::Error: std::error::Error + Send + Sync,
 {
-    let mut listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
         tonic::transport::Server::builder()
             .add_service(svc)
-            .serve_with_incoming(listener.incoming())
+            .serve_with_incoming(TcpListenerStream::new(listener))
             .await
             .unwrap();
     });
 
     // Wait for server to start
-    tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
 
     format!("http://[::1]:{}", port)
 }

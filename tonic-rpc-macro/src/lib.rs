@@ -1,6 +1,3 @@
-use core::panic;
-
-use itertools::Itertools;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
@@ -100,6 +97,7 @@ macro_rules! method_impl {
             fn request_response_name(
                 &self,
                 s: &str,
+                _compile_well_known_types: bool,
             ) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
                 self.0.request_response_name(s)
             }
@@ -159,7 +157,8 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
                 rec.to_token_stream()
             ),
         }
-    };
+    }
+
     let name = method.sig.ident.to_string();
     let server_streaming = method
         .attrs
@@ -173,11 +172,11 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
     let request = match args.len() {
         1 => args[0].to_token_stream(),
         _ => {
-            let tuple_fields: proc_macro2::TokenStream = args
-                .into_iter()
-                .map(|t| t.to_token_stream())
-                .intersperse(quote! {,})
-                .collect();
+            let tuple_fields: proc_macro2::TokenStream = itertools::Itertools::intersperse(
+                args.into_iter().map(|t| t.to_token_stream()),
+                quote! {,},
+            )
+            .collect();
             quote! { ( #tuple_fields )}
         }
     };
@@ -222,13 +221,13 @@ where
         })
         .collect();
     let service = RustDefService {
-        package: name.clone(),
+        package: "".to_string(),
         identifier: name.clone(),
         name,
         methods,
     };
-    let client = tonic_build::client::generate(&service, "");
-    let server = tonic_build::server::generate(&service, "");
+    let client = tonic_build::client::generate(&service, false, "", false);
+    let server = tonic_build::server::generate(&service, false, "", false);
     let types = service.methods.iter().map(|m| {
         let request_name = m.generated_request();
         let response_name = m.generated_response();

@@ -1,4 +1,5 @@
 use tokio::sync::mpsc;
+use tokio_stream::wrappers::{ReceiverStream, TcpListenerStream};
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -15,49 +16,49 @@ type State = ();
 
 #[tonic::async_trait]
 impl counter_server::Counter for State {
-    type countStream = mpsc::Receiver<Result<i32, tonic::Status>>;
+    type countStream = ReceiverStream<Result<i32, tonic::Status>>;
 
     async fn count(
         &self,
         request: tonic::Request<i32>,
     ) -> Result<tonic::Response<Self::countStream>, tonic::Status> {
         let mut x = request.into_inner();
-        let (mut tx, rx) = mpsc::channel(100);
+        let (tx, rx) = mpsc::channel(100);
         tokio::spawn(async move {
             loop {
                 tx.send(Ok(x)).await.unwrap();
                 x += 1;
-                tokio::time::delay_for(std::time::Duration::from_millis(1)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
             }
         });
-        Ok(tonic::Response::new(rx))
+        Ok(tonic::Response::new(ReceiverStream::new(rx)))
     }
 
-    type count_nStream = mpsc::Receiver<Result<i32, tonic::Status>>;
+    type count_nStream = ReceiverStream<Result<i32, tonic::Status>>;
 
     async fn count_n(
         &self,
         request: tonic::Request<(i32, usize)>,
     ) -> Result<tonic::Response<Self::count_nStream>, tonic::Status> {
         let (start, count) = request.into_inner();
-        let (mut tx, rx) = mpsc::channel(1);
+        let (tx, rx) = mpsc::channel(1);
         tokio::spawn(async move {
             for i in 0..count {
                 tx.send(Ok(start + (i as i32))).await.unwrap();
             }
         });
-        Ok(tonic::Response::new(rx))
+        Ok(tonic::Response::new(ReceiverStream::new(rx)))
     }
 }
 
 pub async fn run_server() -> u16 {
-    let mut listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
         tonic::transport::Server::builder()
             .add_service(counter_server::CounterServer::new(()))
-            .serve_with_incoming(listener.incoming())
+            .serve_with_incoming(TcpListenerStream::new(listener))
             .await
             .unwrap();
     });
