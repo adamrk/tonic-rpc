@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
+use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
+use tonic::transport::Server;
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -38,11 +40,11 @@ impl increment_server::Increment for State {
 }
 
 pub async fn run_server() -> u16 {
-    let listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
+    let listener = TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
-        tonic::transport::Server::builder()
+        Server::builder()
             .add_service(increment_server::IncrementServer::new(()))
             .serve_with_incoming(TcpListenerStream::new(listener))
             .await

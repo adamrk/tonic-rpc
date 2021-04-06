@@ -1,18 +1,22 @@
-use std::marker::PhantomData;
+use std::{
+    io::{Read, Write},
+    marker::PhantomData,
+};
 
 use bytes::{buf::BufMut, Buf};
-use tonic::Status;
+use serde::{Deserialize, Serialize};
+use tonic::{codec, Status};
 
 pub trait SerdeCodec {
-    fn write<T, W>(item: T, w: W) -> Result<(), tonic::Status>
+    fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
-        T: serde::Serialize,
-        W: std::io::Write;
+        T: Serialize,
+        W: Write;
 
-    fn read<T, R>(r: R) -> Result<T, tonic::Status>
+    fn read<T, R>(r: R) -> Result<T, Status>
     where
-        T: for<'de> serde::Deserialize<'de>,
-        R: std::io::Read;
+        T: for<'de> Deserialize<'de>,
+        R: Read;
 }
 
 #[derive(Clone, Copy)]
@@ -20,17 +24,17 @@ pub struct Encoder<C, T> {
     _pd: PhantomData<(C, T)>,
 }
 
-impl<C, T> tonic::codec::Encoder for Encoder<C, T>
+impl<C, T> codec::Encoder for Encoder<C, T>
 where
-    T: serde::Serialize,
+    T: Serialize,
     C: SerdeCodec,
 {
     type Item = T;
-    type Error = tonic::Status;
+    type Error = Status;
     fn encode(
         &mut self,
         item: Self::Item,
-        dst: &mut tonic::codec::EncodeBuf<'_>,
+        dst: &mut codec::EncodeBuf<'_>,
     ) -> Result<(), Self::Error> {
         C::write(item, dst.writer())
     }
@@ -41,16 +45,16 @@ pub struct Decoder<C, T> {
     _pd: PhantomData<(C, T)>,
 }
 
-impl<C, T> tonic::codec::Decoder for Decoder<C, T>
+impl<C, T> codec::Decoder for Decoder<C, T>
 where
-    T: for<'de> serde::Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
     C: SerdeCodec,
 {
     type Item = T;
-    type Error = tonic::Status;
+    type Error = Status;
     fn decode(
         &mut self,
-        src: &mut tonic::codec::DecodeBuf<'_>,
+        src: &mut codec::DecodeBuf<'_>,
     ) -> Result<Option<Self::Item>, Self::Error> {
         Ok(Some(C::read::<T, _>(src.reader())?))
     }
@@ -66,11 +70,11 @@ impl<C, T, U> Default for Codec<C, T, U> {
     }
 }
 
-impl<C, T, U> tonic::codec::Codec for Codec<C, T, U>
+impl<C, T, U> codec::Codec for Codec<C, T, U>
 where
     C: SerdeCodec + Send + Sync + 'static,
-    T: serde::Serialize + Send + Sync + 'static,
-    U: for<'de> serde::Deserialize<'de> + Send + Sync + 'static,
+    T: Serialize + Send + Sync + 'static,
+    U: for<'de> Deserialize<'de> + Send + Sync + 'static,
 {
     type Encode = T;
     type Decode = U;
@@ -94,8 +98,8 @@ pub struct MessagePackSerdeCodec;
 impl SerdeCodec for BincodeSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
-        T: serde::Serialize,
-        W: std::io::Write,
+        T: Serialize,
+        W: Write,
     {
         bincode::serialize_into(w, &item)
             .map_err(|bincode_err| Status::internal(format!("Error serializing {}", bincode_err)))
@@ -103,8 +107,8 @@ impl SerdeCodec for BincodeSerdeCodec {
 
     fn read<T, R>(r: R) -> Result<T, Status>
     where
-        T: for<'de> serde::Deserialize<'de>,
-        R: std::io::Read,
+        T: for<'de> Deserialize<'de>,
+        R: Read,
     {
         bincode::deserialize_from(r)
             .map_err(|bincode_err| Status::internal(format!("Error deserializing {}", bincode_err)))
@@ -114,8 +118,8 @@ impl SerdeCodec for BincodeSerdeCodec {
 impl SerdeCodec for CborSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
-        T: serde::Serialize,
-        W: std::io::Write,
+        T: Serialize,
+        W: Write,
     {
         serde_cbor::to_writer(w, &item)
             .map_err(|serde_err| Status::internal(format!("Error serializing {}", serde_err)))
@@ -123,8 +127,8 @@ impl SerdeCodec for CborSerdeCodec {
 
     fn read<T, R>(r: R) -> Result<T, Status>
     where
-        T: for<'de> serde::Deserialize<'de>,
-        R: std::io::Read,
+        T: for<'de> Deserialize<'de>,
+        R: Read,
     {
         serde_cbor::from_reader(r)
             .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))
@@ -134,8 +138,8 @@ impl SerdeCodec for CborSerdeCodec {
 impl SerdeCodec for JsonSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
-        T: serde::Serialize,
-        W: std::io::Write,
+        T: Serialize,
+        W: Write,
     {
         serde_json::to_writer(w, &item)
             .map_err(|serde_err| Status::internal(format!("Error serializing {}", serde_err)))
@@ -143,8 +147,8 @@ impl SerdeCodec for JsonSerdeCodec {
 
     fn read<T, R>(r: R) -> Result<T, Status>
     where
-        T: for<'de> serde::Deserialize<'de>,
-        R: std::io::Read,
+        T: for<'de> Deserialize<'de>,
+        R: Read,
     {
         serde_json::from_reader(r)
             .map_err(|serde_err| Status::internal(format!("Error deserializing {}", serde_err)))
@@ -154,8 +158,8 @@ impl SerdeCodec for JsonSerdeCodec {
 impl SerdeCodec for MessagePackSerdeCodec {
     fn write<T, W>(item: T, mut w: W) -> Result<(), Status>
     where
-        T: serde::Serialize,
-        W: std::io::Write,
+        T: Serialize,
+        W: Write,
     {
         rmp_serde::encode::write(&mut w, &item).map_err(|message_pack_err| {
             Status::internal(format!("Error serializing {}", message_pack_err))
@@ -164,8 +168,8 @@ impl SerdeCodec for MessagePackSerdeCodec {
 
     fn read<T, R>(r: R) -> Result<T, Status>
     where
-        T: for<'de> serde::Deserialize<'de>,
-        R: std::io::Read,
+        T: for<'de> Deserialize<'de>,
+        R: Read,
     {
         rmp_serde::from_read(r).map_err(|message_pack_err| {
             Status::internal(format!("Error deserializing {}", message_pack_err))

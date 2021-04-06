@@ -5,6 +5,7 @@ use std::{
 
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
+use tonic::Status;
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -15,24 +16,25 @@ trait PubSub {
     #[client_streaming]
     fn sub(channel: String) -> (String, String);
 
-    fn publish(chanenl: String, value: String) -> ();
+    fn publish(channel: String, value: String) -> ();
 }
+
+type Update = Result<(String, String), Status>;
 
 #[derive(Debug)]
 struct State {
     data: Arc<Mutex<HashMap<String, String>>>,
-    subscribers:
-        Arc<Mutex<HashMap<String, Vec<mpsc::Sender<Result<(String, String), tonic::Status>>>>>>,
+    subscribers: Arc<Mutex<HashMap<String, Vec<mpsc::Sender<Update>>>>>,
 }
 
 #[tonic::async_trait]
 impl pub_sub_server::PubSub for State {
-    type subStream = ReceiverStream<Result<(String, String), tonic::Status>>;
+    type subStream = ReceiverStream<Update>;
 
     async fn sub(
         &self,
         channels: tonic::Request<tonic::Streaming<String>>,
-    ) -> Result<tonic::Response<Self::subStream>, tonic::Status> {
+    ) -> Result<tonic::Response<Self::subStream>, Status> {
         let mut channels = channels.into_inner();
         let (tx, rx) = mpsc::channel(20);
         let subscribers = Arc::clone(&self.subscribers);
@@ -59,7 +61,7 @@ impl pub_sub_server::PubSub for State {
     async fn publish(
         &self,
         kvp: tonic::Request<(String, String)>,
-    ) -> Result<tonic::Response<()>, tonic::Status> {
+    ) -> Result<tonic::Response<()>, Status> {
         let (key, value) = kvp.into_inner();
         self.data.lock().unwrap().insert(key.clone(), value.clone());
         let to_send = {

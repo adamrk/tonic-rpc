@@ -49,7 +49,7 @@ async fn test_client_streaming() {
 #[tonic_rpc(json)]
 trait Store {
     #[client_streaming]
-    fn store(req: String) -> (); // Change this to handle no return type?
+    fn store(req: String);
 }
 
 #[derive(Clone)]

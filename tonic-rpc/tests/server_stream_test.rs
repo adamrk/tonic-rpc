@@ -1,5 +1,8 @@
-use tokio::sync::mpsc;
+use std::time::Duration;
+
+use tokio::{net::TcpListener, sync::mpsc};
 use tokio_stream::wrappers::{ReceiverStream, TcpListenerStream};
+use tonic::transport::Server;
 use tonic_rpc::tonic_rpc;
 
 mod util;
@@ -28,7 +31,7 @@ impl counter_server::Counter for State {
             loop {
                 tx.send(Ok(x)).await.unwrap();
                 x += 1;
-                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                tokio::time::sleep(Duration::from_millis(1)).await;
             }
         });
         Ok(tonic::Response::new(ReceiverStream::new(rx)))
@@ -52,11 +55,11 @@ impl counter_server::Counter for State {
 }
 
 pub async fn run_server() -> u16 {
-    let listener = tokio::net::TcpListener::bind("[::1]:0").await.unwrap();
+    let listener = TcpListener::bind("[::1]:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
-        tonic::transport::Server::builder()
+        Server::builder()
             .add_service(counter_server::CounterServer::new(()))
             .serve_with_incoming(TcpListenerStream::new(listener))
             .await
