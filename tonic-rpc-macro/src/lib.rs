@@ -15,6 +15,7 @@ struct RustDefMethod {
     pub response: proc_macro2::TokenStream,
     pub generated_request: syn::Ident,
     pub generated_response: syn::Ident,
+    pub doc_comments: Vec<String>,
 }
 
 impl RustDefMethod {
@@ -25,7 +26,7 @@ impl RustDefMethod {
         &self.identifier
     }
     fn comment(&self) -> &[String] {
-        &[]
+        &self.doc_comments
     }
     fn client_streaming(&self) -> bool {
         self.client_streaming
@@ -148,6 +149,34 @@ service_impl!(BincodeMethod, "tonic_rpc::codec::BincodeCodec");
 service_impl!(CborMethod, "tonic_rpc::codec::CborCodec");
 service_impl!(MessagePackMethod, "tonic_rpc::codec::MessagePackCodec");
 
+/// Return value is `(server_streaming, client_streaming, doc_comments)`.
+fn parse_attributes(attributes: Vec<syn::Attribute>) -> (bool, bool, Vec<String>) {
+    let mut server_streaming = false;
+    let mut client_streaming = false;
+    let mut doc_comments = Vec::new();
+
+    for attr in attributes {
+        if attr.path.is_ident("server_streaming") {
+            server_streaming = true;
+        } else if attr.path.is_ident("client_streaming") {
+            client_streaming = true;
+        } else if attr.path.is_ident("doc") {
+            if let Some(comment) = attr
+                .tokens
+                .to_string()
+                .strip_prefix("= \"")
+                .and_then(|c| c.strip_suffix('\"'))
+            {
+                doc_comments.push(comment.to_string())
+            }
+        } else {
+            panic!("Attribute {:?} is not supported on tonic-rpc methods", attr)
+        }
+    }
+
+    (server_streaming, client_streaming, doc_comments)
+}
+
 fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str) -> T {
     fn extract_arg<P>(arg: Pair<FnArg, P>) -> Box<Type> {
         match arg {
@@ -160,14 +189,8 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
     }
 
     let name = method.sig.ident.to_string();
-    let server_streaming = method
-        .attrs
-        .iter()
-        .any(|attr| attr.path.is_ident("server_streaming"));
-    let client_streaming = method
-        .attrs
-        .iter()
-        .any(|attr| attr.path.is_ident("client_streaming"));
+    let (server_streaming, client_streaming, doc_comments) = parse_attributes(method.attrs);
+
     let args: Vec<_> = method.sig.inputs.into_pairs().map(extract_arg).collect();
     let request = match args.len() {
         1 => args[0].to_token_stream(),
@@ -201,6 +224,7 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
             trait_name,
             name.clone()
         ),
+        doc_comments,
     }
     .into()
 }
