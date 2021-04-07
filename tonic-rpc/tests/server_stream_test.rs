@@ -19,12 +19,12 @@ type State = ();
 
 #[tonic::async_trait]
 impl counter_server::Counter for State {
-    type countStream = ReceiverStream<Result<i32, tonic::Status>>;
+    type CountStream = ReceiverStream<Result<i32, tonic::Status>>;
 
     async fn count(
         &self,
         request: tonic::Request<i32>,
-    ) -> Result<tonic::Response<Self::countStream>, tonic::Status> {
+    ) -> Result<tonic::Response<Self::CountStream>, tonic::Status> {
         let mut x = request.into_inner();
         let (tx, rx) = mpsc::channel(100);
         tokio::spawn(async move {
@@ -37,12 +37,12 @@ impl counter_server::Counter for State {
         Ok(tonic::Response::new(ReceiverStream::new(rx)))
     }
 
-    type count_nStream = ReceiverStream<Result<i32, tonic::Status>>;
+    type CountNStream = ReceiverStream<Result<i32, tonic::Status>>;
 
     async fn count_n(
         &self,
         request: tonic::Request<(i32, usize)>,
-    ) -> Result<tonic::Response<Self::count_nStream>, tonic::Status> {
+    ) -> Result<tonic::Response<Self::CountNStream>, tonic::Status> {
         let (start, count) = request.into_inner();
         let (tx, rx) = mpsc::channel(1);
         tokio::spawn(async move {

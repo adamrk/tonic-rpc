@@ -29,12 +29,12 @@ struct State {
 
 #[tonic::async_trait]
 impl pub_sub_server::PubSub for State {
-    type subStream = ReceiverStream<Update>;
+    type SubStream = ReceiverStream<Update>;
 
     async fn sub(
         &self,
         channels: tonic::Request<tonic::Streaming<String>>,
-    ) -> Result<tonic::Response<Self::subStream>, Status> {
+    ) -> Result<tonic::Response<Self::SubStream>, Status> {
         let mut channels = channels.into_inner();
         let (tx, rx) = mpsc::channel(20);
         let subscribers = Arc::clone(&self.subscribers);

@@ -207,23 +207,20 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         ReturnType::Default => quote! { () },
         ReturnType::Type(_arrow, ty) => ty.to_token_stream(),
     };
+    let generated_request =
+        quote::format_ident!("__tonic_generated_{}_{}_request", trait_name, name);
+    let generated_response =
+        quote::format_ident!("__tonic_generated_{}_{}_response", trait_name, name);
+
     RustDefMethod {
-        identifier: name.clone(),
-        name: name.clone(),
+        identifier: heck::CamelCase::to_camel_case(name.as_str()),
+        name,
         client_streaming,
         server_streaming,
         request,
         response,
-        generated_request: quote::format_ident!(
-            "__tonic_generated_{}_{}_request",
-            trait_name,
-            name.clone()
-        ),
-        generated_response: quote::format_ident!(
-            "__tonic_generated_{}_{}_response",
-            trait_name,
-            name.clone()
-        ),
+        generated_request,
+        generated_response,
         doc_comments,
     }
     .into()
