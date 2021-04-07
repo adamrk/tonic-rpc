@@ -106,10 +106,10 @@ macro_rules! method_impl {
     };
 }
 
-method_impl!(JsonMethod, "tonic_rpc::codec::JsonCodec");
-method_impl!(BincodeMethod, "tonic_rpc::codec::BincodeCodec");
-method_impl!(CborMethod, "tonic_rpc::codec::CborCodec");
-method_impl!(MessagePackMethod, "tonic_rpc::codec::MessagePackCodec");
+method_impl!(JsonMethod, "::tonic_rpc::codec::JsonCodec");
+method_impl!(BincodeMethod, "::tonic_rpc::codec::BincodeCodec");
+method_impl!(CborMethod, "::tonic_rpc::codec::CborCodec");
+method_impl!(MessagePackMethod, "::tonic_rpc::codec::MessagePackCodec");
 
 struct RustDefService<T> {
     pub name: String,
@@ -144,10 +144,10 @@ macro_rules! service_impl {
     };
 }
 
-service_impl!(JsonMethod, "tonic_rpc::codec::JsonCodec");
-service_impl!(BincodeMethod, "tonic_rpc::codec::BincodeCodec");
-service_impl!(CborMethod, "tonic_rpc::codec::CborCodec");
-service_impl!(MessagePackMethod, "tonic_rpc::codec::MessagePackCodec");
+service_impl!(JsonMethod, "::tonic_rpc::codec::JsonCodec");
+service_impl!(BincodeMethod, "::tonic_rpc::codec::BincodeCodec");
+service_impl!(CborMethod, "::tonic_rpc::codec::CborCodec");
+service_impl!(MessagePackMethod, "::tonic_rpc::codec::MessagePackCodec");
 
 /// Return value is `(server_streaming, client_streaming, doc_comments)`.
 fn parse_attributes(attributes: Vec<syn::Attribute>) -> (bool, bool, Vec<String>) {
