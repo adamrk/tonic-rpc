@@ -1,8 +1,17 @@
 [package]
 name = "tonic-rpc"
 version = "0.1.0"
-authors = ["adamrk <ark.email@gmail.com>"]
+authors = ["Adam Bratschi-Kaye <ark.email@gmail.com>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/adamrk/tonic-rpc"
+homepage = "https://github.com/adamrk/tonic-rpc"
+description = """
+Define RPC using native Rust types using tonic.
+"""
+readme = "../README.md"
+categories = ["network-programming", "asynchronous"]
+keywords = ["rpc", "async", "json", "bincode", "messagepack"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
