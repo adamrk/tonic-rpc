@@ -146,9 +146,9 @@
 //! ```
 //! becomes
 //! ```ignore
-//! type fStream: Stream<Item = Result<Z, tonic::Status>;
+//! type FStream: Stream<Item = Result<Z, tonic::Status>;
 //!
-//! async fn f(..) -> Result::<tonic::Response<Self::fStream>, tonic::Status>
+//! async fn f(..) -> Result::<tonic::Response<Self::FStream>, tonic::Status>
 //! ```
 //!
 
