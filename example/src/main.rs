@@ -1,4 +1,6 @@
+use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
+use tonic::transport::Server;
 use tonic_rpc::tonic_rpc;
 
 /// The `tonic_rpc` attribute says that we want to build an RPC defined by this trait.
@@ -28,10 +30,10 @@ impl increment_server::Increment for State {
 /// Run the server.
 #[tokio::main]
 async fn main() {
-    let listener = tokio::net::TcpListener::bind("[::1]:8080").await.unwrap();
+    let listener = TcpListener::bind("[::1]:8080").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move {
-        tonic::transport::Server::builder()
+        Server::builder()
             .add_service(increment_server::IncrementServer::new(State))
             .serve_with_incoming(TcpListenerStream::new(listener))
             .await
