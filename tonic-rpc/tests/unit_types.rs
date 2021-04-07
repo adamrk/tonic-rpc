@@ -1,3 +1,5 @@
+#![cfg(feature = "cbor")]
+
 use tonic_rpc::tonic_rpc;
 
 mod util;

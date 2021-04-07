@@ -1,3 +1,9 @@
+#![cfg(all(
+    feature = "json",
+    feature = "cbor",
+    feature = "bin-code",
+    feature = "messagepack"
+))]
 use std::time::Duration;
 
 use tokio::net::TcpListener;

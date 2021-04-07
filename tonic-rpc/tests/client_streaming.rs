@@ -1,3 +1,5 @@
+#![cfg(feature = "json")]
+
 use std::sync::{Arc, Mutex};
 
 use tokio::sync::mpsc;

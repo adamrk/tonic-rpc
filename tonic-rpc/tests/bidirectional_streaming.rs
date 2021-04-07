@@ -1,3 +1,5 @@
+#![cfg(feature = "json")]
+
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},

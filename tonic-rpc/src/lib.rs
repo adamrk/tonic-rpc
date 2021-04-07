@@ -18,6 +18,7 @@
 //! # Example
 //! Instead of defining a `proto`, define a service as a trait:
 //! ```no_run
+//! # #[cfg(feature = "json")]
 //! #[tonic_rpc::tonic_rpc(json)]
 //! trait Increment {
 //!     fn increment(arg: i32) -> i32;
@@ -31,12 +32,14 @@
 //!
 //! The service can be implemented by defining and `impl`:
 //! ```no_run
+//! # #[cfg(feature = "json")]
 //! # #[tonic_rpc::tonic_rpc(json)]
 //! # trait Increment {
 //! #     fn increment(arg: i32) -> i32;
 //! # }
 //! struct State;
 //!
+//! # #[cfg(feature = "json")]
 //! #[tonic::async_trait]
 //! impl increment_server::Increment for State {
 //!     async fn increment(
@@ -51,12 +54,14 @@
 //!
 //! And a server and client can be run:
 //! ```rust
+//! # #[cfg(feature = "json")]
 //! # #[tonic_rpc::tonic_rpc(json)]
 //! # trait Increment {
 //! #     fn increment(arg: i32) -> i32;
 //! # }
 //! # struct State;
 //! #
+//! # #[cfg(feature = "json")]
 //! # #[tonic::async_trait]
 //! # impl increment_server::Increment for State {
 //! #     async fn increment(
@@ -66,6 +71,7 @@
 //! #       Ok(tonic::Response::new(request.into_inner() + 1))
 //! #   }
 //! # }
+//! # #[cfg(feature = "json")]
 //! async fn run_client_server() {
 //!     let mut listener = tokio::net::TcpListener::bind("[::1]:8080").await.unwrap();
 //!     let addr = listener.local_addr().unwrap();
@@ -81,9 +87,12 @@
 //!     let response = client.increment(32).await.unwrap().into_inner();
 //!     assert_eq!(33, response);
 //! }
+//! # #[cfg(feature = "json")]
 //! # fn main() {
 //! #     run_client_server();
 //! # }
+//! # #[cfg(not(feature = "json"))]
+//! # fn main() {}
 //! ```
 //!
 //! The full example is available [here](https://github.com/adamrk/tonic-rpc/tree/main/example).

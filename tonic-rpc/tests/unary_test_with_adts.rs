@@ -1,3 +1,5 @@
+#![cfg(feature = "json")]
+
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;

@@ -90,11 +90,16 @@ where
     }
 }
 
+#[cfg(feature = "bin-code")]
 pub struct BincodeSerdeCodec;
+#[cfg(feature = "cbor")]
 pub struct CborSerdeCodec;
+#[cfg(feature = "json")]
 pub struct JsonSerdeCodec;
+#[cfg(feature = "messagepack")]
 pub struct MessagePackSerdeCodec;
 
+#[cfg(feature = "bin-code")]
 impl SerdeCodec for BincodeSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -115,6 +120,7 @@ impl SerdeCodec for BincodeSerdeCodec {
     }
 }
 
+#[cfg(feature = "cbor")]
 impl SerdeCodec for CborSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -135,6 +141,7 @@ impl SerdeCodec for CborSerdeCodec {
     }
 }
 
+#[cfg(feature = "json")]
 impl SerdeCodec for JsonSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -155,6 +162,7 @@ impl SerdeCodec for JsonSerdeCodec {
     }
 }
 
+#[cfg(feature = "messagepack")]
 impl SerdeCodec for MessagePackSerdeCodec {
     fn write<T, W>(item: T, mut w: W) -> Result<(), Status>
     where
@@ -177,7 +185,11 @@ impl SerdeCodec for MessagePackSerdeCodec {
     }
 }
 
+#[cfg(feature = "bin-code")]
 pub type BincodeCodec<T, U> = Codec<BincodeSerdeCodec, T, U>;
+#[cfg(feature = "cbor")]
 pub type CborCodec<T, U> = Codec<CborSerdeCodec, T, U>;
+#[cfg(feature = "json")]
 pub type JsonCodec<T, U> = Codec<JsonSerdeCodec, T, U>;
+#[cfg(feature = "messagepack")]
 pub type MessagePackCodec<T, U> = Codec<MessagePackSerdeCodec, T, U>;
