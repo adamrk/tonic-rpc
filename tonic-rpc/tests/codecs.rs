@@ -1,11 +1,9 @@
 #![cfg(all(
     feature = "json",
     feature = "cbor",
-    feature = "bin-code",
+    feature = "bincode",
     feature = "messagepack"
 ))]
-
-use std::time::Duration;
 
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
@@ -98,8 +96,6 @@ pub async fn run_server() -> u16 {
 #[tokio::test]
 async fn test_json_codec() {
     let port = run_server().await;
-    // Wait for server to start
-    tokio::time::sleep(Duration::from_millis(1)).await;
     let mut client = math_json_client::MathJsonClient::connect(format!("http://[::1]:{}", port))
         .await
         .expect("Failed to connect");
@@ -117,8 +113,6 @@ async fn test_json_codec() {
 #[tokio::test]
 async fn test_cbor_codec() {
     let port = run_server().await;
-    // Wait for server to start
-    tokio::time::sleep(Duration::from_millis(1)).await;
     let mut client = math_cbor_client::MathCborClient::connect(format!("http://[::1]:{}", port))
         .await
         .expect("Failed to connect");
@@ -136,8 +130,6 @@ async fn test_cbor_codec() {
 #[tokio::test]
 async fn test_bincode_codec() {
     let port = run_server().await;
-    // Wait for server to start
-    tokio::time::sleep(Duration::from_millis(1)).await;
     let mut client =
         math_bincode_client::MathBincodeClient::connect(format!("http://[::1]:{}", port))
             .await
@@ -156,8 +148,6 @@ async fn test_bincode_codec() {
 #[tokio::test]
 async fn test_message_pack_codec() {
     let port = run_server().await;
-    // Wait for server to start
-    tokio::time::sleep(Duration::from_millis(1)).await;
     let mut client =
         math_message_pack_client::MathMessagePackClient::connect(format!("http://[::1]:{}", port))
             .await
