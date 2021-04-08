@@ -1,3 +1,5 @@
+#![cfg(feature = "json")]
+
 use tonic_rpc::tonic_rpc;
 
 mod util;

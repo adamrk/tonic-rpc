@@ -1,3 +1,5 @@
+#![cfg(feature = "json")]
+
 use std::time::Duration;
 
 use tokio::{net::TcpListener, sync::mpsc};

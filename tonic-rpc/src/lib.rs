@@ -6,37 +6,41 @@
 //! Of course, this comes at the sacrifice of interoporability.
 //!
 //! # Alternatives
-//! [`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services using
+//! [`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services
 //! as a Rust trait.
 //!
 //! # Required dependencies
 //! ```toml
-//! tonic = <tonic-version>
-//! tonic-rpc = <tonic-rpc-version>
+//! tonic = "0.4"
+//! tonic-rpc = { version = "0.1", features = [ <enabled-codecs> ] }
 //! ```
 //!
 //! # Example
-//! Instead of defining a `proto`, define a service as a trait:
+//! Instead of defining a `proto` file, define a service as a trait:
 //! ```no_run
+//! # #[cfg(feature = "json")]
 //! #[tonic_rpc::tonic_rpc(json)]
 //! trait Increment {
 //!     fn increment(arg: i32) -> i32;
 //! }
 //! # fn main() {}
 //! ```
-//! The attribute `#[tonic_rpc(json)]` indicates that this service
+//! The attribute **`#[tonic_rpc(json)]`** indicates that this service
 //! will serialize the requests and responses using `json`.
+//! Other [`encodings are available`](#encodings).
 //! The arguments and return values for each function must implement
 //! `serde::Serialize` and `serde::Deserialize`.
 //!
 //! The service can be implemented by defining and `impl`:
 //! ```no_run
+//! # #[cfg(feature = "json")]
 //! # #[tonic_rpc::tonic_rpc(json)]
 //! # trait Increment {
 //! #     fn increment(arg: i32) -> i32;
 //! # }
 //! struct State;
 //!
+//! # #[cfg(feature = "json")]
 //! #[tonic::async_trait]
 //! impl increment_server::Increment for State {
 //!     async fn increment(
@@ -51,12 +55,14 @@
 //!
 //! And a server and client can be run:
 //! ```rust
+//! # #[cfg(feature = "json")]
 //! # #[tonic_rpc::tonic_rpc(json)]
 //! # trait Increment {
 //! #     fn increment(arg: i32) -> i32;
 //! # }
 //! # struct State;
 //! #
+//! # #[cfg(feature = "json")]
 //! # #[tonic::async_trait]
 //! # impl increment_server::Increment for State {
 //! #     async fn increment(
@@ -66,6 +72,7 @@
 //! #       Ok(tonic::Response::new(request.into_inner() + 1))
 //! #   }
 //! # }
+//! # #[cfg(feature = "json")]
 //! async fn run_client_server() {
 //!     let mut listener = tokio::net::TcpListener::bind("[::1]:8080").await.unwrap();
 //!     let addr = listener.local_addr().unwrap();
@@ -81,20 +88,35 @@
 //!     let response = client.increment(32).await.unwrap().into_inner();
 //!     assert_eq!(33, response);
 //! }
+//! # #[cfg(feature = "json")]
 //! # fn main() {
 //! #     run_client_server();
 //! # }
+//! # #[cfg(not(feature = "json"))]
+//! # fn main() {}
 //! ```
 //!
 //! The full example is available [here](https://github.com/adamrk/tonic-rpc/tree/main/example).
 //! Further examples are available in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
 //!
 //! # Encodings
-//! The available encodings are:
-//! - `bincode` - using [`bincode`](https://crates.io/crates/bincode)
-//! - `cbor` - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
-//! - `json` - using [`serde_json`](https://crates.io/crates/serde_json)
-//! - `messagepack` - using [`rmp-serde`](https://crates.io/crates/rmp-serde)
+//! Multiple codecs are available for serializing the RPC request/response types.
+//! Each codec is enabled by a [feature flag](https://doc.rust-lang.org/cargo/reference/features.html#the-features-section).
+//! **At least one of these features must be enabled.**
+//! - **`bincode`** - using [`bincode`](https://crates.io/crates/bincode)
+//! - **`cbor`** - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
+//! - **`json`** - using [`serde_json`](https://crates.io/crates/serde_json)
+//! - **`messagepack`** - using [`rmp-serde`](https://crates.io/crates/rmp-serde)
+//!
+//! E.g. To use the encode using `bincode`, use the attribute
+//! ```ignore
+//! #[tonic_rpc::tonic_rpc(cbor)]
+//! ```
+//! and include
+//! ```toml
+//! tonic-rpc = { version = "0.1", features = [ "cbor" ]}
+//! ```
+//! in `Cargo.toml`.
 //!
 //! # Streaming
 //! Streaming can be added on the client or server side by adding the attributes
@@ -146,11 +168,13 @@
 //! ```
 //! becomes
 //! ```ignore
-//! type FStream: Stream<Item = Result<Z, tonic::Status>;
+//! type FStream: Stream<Item = Result<Z, tonic::Status>>;
 //!
 //! async fn f(..) -> Result::<tonic::Response<Self::FStream>, tonic::Status>
 //! ```
 //!
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub use tonic_rpc_macro::tonic_rpc;
 
