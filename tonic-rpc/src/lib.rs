@@ -11,8 +11,8 @@
 //!
 //! # Required dependencies
 //! ```toml
-//! tonic = <tonic-version>
-//! tonic-rpc = <tonic-rpc-version>
+//! tonic = "0.4"
+//! tonic-rpc = { version = "0.1", features = [ <enabled-codecs> ] }
 //! ```
 //!
 //! # Example
@@ -25,8 +25,9 @@
 //! }
 //! # fn main() {}
 //! ```
-//! The attribute `#[tonic_rpc(json)]` indicates that this service
+//! The attribute **`#[tonic_rpc(json)]`** indicates that this service
 //! will serialize the requests and responses using `json`.
+//! Other [`encodings are available`](#encodings).
 //! The arguments and return values for each function must implement
 //! `serde::Serialize` and `serde::Deserialize`.
 //!
@@ -99,11 +100,22 @@
 //! Further examples are available in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
 //!
 //! # Encodings
-//! The available encodings are:
-//! - `bincode` - using [`bincode`](https://crates.io/crates/bincode)
-//! - `cbor` - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
-//! - `json` - using [`serde_json`](https://crates.io/crates/serde_json)
-//! - `messagepack` - using [`rmp-serde`](https://crates.io/crates/rmp-serde)
+//! Multiple codecs are available for serializing the RPC request/response types. Each codec is enabled by a [feature flag](https://doc.rust-lang.org/cargo/reference/features.html#the-features-section).
+//! **At least one of these features must be enabled.**
+//! - **`bincode`** - using [`bincode`](https://crates.io/crates/bincode)
+//! - **`cbor`** - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
+//! - **`json`** - using [`serde_json`](https://crates.io/crates/serde_json)
+//! - **`messagepack`** - using [`rmp-serde`](https://crates.io/crates/rmp-serde)
+//!
+//! E.g. To use the encode using `bincode`, use the attribute
+//! ```ignore
+//! #[tonic_rpc::tonic_rpc(cbor)]
+//! ```
+//! and include
+//! ```toml
+//! tonic-rpc = { version = "0.1", features = [ "cbor" ]}
+//! ```
+//! in `Cargo.toml`.
 //!
 //! # Streaming
 //! Streaming can be added on the client or server side by adding the attributes
