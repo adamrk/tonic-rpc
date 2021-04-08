@@ -100,7 +100,8 @@
 //! Further examples are available in the [tests folder](https://github.com/adamrk/tonic-rpc/tree/main/tonic-rpc/tests).
 //!
 //! # Encodings
-//! Multiple codecs are available for serializing the RPC request/response types. Each codec is enabled by a [feature flag](https://doc.rust-lang.org/cargo/reference/features.html#the-features-section).
+//! Multiple codecs are available for serializing the RPC request/response types.
+//! Each codec is enabled by a [feature flag](https://doc.rust-lang.org/cargo/reference/features.html#the-features-section).
 //! **At least one of these features must be enabled.**
 //! - **`bincode`** - using [`bincode`](https://crates.io/crates/bincode)
 //! - **`cbor`** - using [`serde_cbor`](https://crates.io/crates/serde_cbor)
