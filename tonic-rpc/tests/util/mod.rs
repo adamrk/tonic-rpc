@@ -1,4 +1,4 @@
-use std::{error::Error, time::Duration};
+use std::{error::Error};
 
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
@@ -28,9 +28,6 @@ where
             .await
             .unwrap();
     });
-
-    // Wait for server to start
-    tokio::time::sleep(Duration::from_millis(1)).await;
 
     format!("http://[::1]:{}", port)
 }
