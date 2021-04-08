@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/adamrk/tonic-rpc"
 homepage = "https://github.com/adamrk/tonic-rpc"
 description = """
-RPC library that uses native Rust types is built on tonic.
+RPC library that uses native Rust types and is built on tonic.
 """
 readme = "../README.md"
 categories = ["network-programming", "asynchronous"]

@@ -6,7 +6,7 @@
 //! Of course, this comes at the sacrifice of interoporability.
 //!
 //! # Alternatives
-//! [`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services using
+//! [`tarpc`](https://crates.io/crates/tarpc) is an excellent RPC library that also defines services
 //! as a Rust trait.
 //!
 //! # Required dependencies
@@ -16,7 +16,7 @@
 //! ```
 //!
 //! # Example
-//! Instead of defining a `proto`, define a service as a trait:
+//! Instead of defining a `proto` file, define a service as a trait:
 //! ```no_run
 //! # #[cfg(feature = "json")]
 //! #[tonic_rpc::tonic_rpc(json)]
@@ -168,7 +168,7 @@
 //! ```
 //! becomes
 //! ```ignore
-//! type FStream: Stream<Item = Result<Z, tonic::Status>;
+//! type FStream: Stream<Item = Result<Z, tonic::Status>>;
 //!
 //! async fn f(..) -> Result::<tonic::Response<Self::FStream>, tonic::Status>
 //! ```
