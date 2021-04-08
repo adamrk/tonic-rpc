@@ -90,16 +90,21 @@ where
     }
 }
 
-#[cfg(feature = "bin-code")]
+#[cfg(feature = "bincode")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bincode")))]
 pub struct BincodeSerdeCodec;
 #[cfg(feature = "cbor")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
 pub struct CborSerdeCodec;
 #[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub struct JsonSerdeCodec;
 #[cfg(feature = "messagepack")]
+#[cfg_attr(docsrs, doc(cfg(feature = "messagepack")))]
 pub struct MessagePackSerdeCodec;
 
-#[cfg(feature = "bin-code")]
+#[cfg(feature = "bincode")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bincode")))]
 impl SerdeCodec for BincodeSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -121,6 +126,7 @@ impl SerdeCodec for BincodeSerdeCodec {
 }
 
 #[cfg(feature = "cbor")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
 impl SerdeCodec for CborSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -142,6 +148,7 @@ impl SerdeCodec for CborSerdeCodec {
 }
 
 #[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 impl SerdeCodec for JsonSerdeCodec {
     fn write<T, W>(item: T, w: W) -> Result<(), Status>
     where
@@ -163,6 +170,7 @@ impl SerdeCodec for JsonSerdeCodec {
 }
 
 #[cfg(feature = "messagepack")]
+#[cfg_attr(docsrs, doc(cfg(feature = "messagepack")))]
 impl SerdeCodec for MessagePackSerdeCodec {
     fn write<T, W>(item: T, mut w: W) -> Result<(), Status>
     where
@@ -185,11 +193,15 @@ impl SerdeCodec for MessagePackSerdeCodec {
     }
 }
 
-#[cfg(feature = "bin-code")]
+#[cfg(feature = "bincode")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bincode")))]
 pub type BincodeCodec<T, U> = Codec<BincodeSerdeCodec, T, U>;
 #[cfg(feature = "cbor")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
 pub type CborCodec<T, U> = Codec<CborSerdeCodec, T, U>;
 #[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub type JsonCodec<T, U> = Codec<JsonSerdeCodec, T, U>;
 #[cfg(feature = "messagepack")]
+#[cfg_attr(docsrs, doc(cfg(feature = "messagepack")))]
 pub type MessagePackCodec<T, U> = Codec<MessagePackSerdeCodec, T, U>;

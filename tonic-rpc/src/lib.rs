@@ -173,6 +173,8 @@
 //! ```
 //!
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 pub use tonic_rpc_macro::tonic_rpc;
 
 pub mod codec;
