@@ -16,7 +16,7 @@ Core macro for tonic-rpc.
 proc-macro = true
 
 [dependencies]
-heck = "0.3"
+heck = "0.4"
 itertools = "0.10"
 syn = { version = "1.0", features = ["full"] }
 tonic-build = "0.7"
