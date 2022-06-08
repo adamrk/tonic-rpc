@@ -25,7 +25,7 @@ messagepack = ["rmp-serde"]
 bytes = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tonic = "0.4"
-tonic-rpc-macro = { version = "0.1", path = "../tonic-rpc-macro" }
+tonic-rpc-macro = { version = "0.2", path = "../tonic-rpc-macro" }
 
 # optional codecs
 bincode = { version = "1.3", optional = true }
