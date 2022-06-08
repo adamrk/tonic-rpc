@@ -213,7 +213,7 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         quote::format_ident!("__tonic_generated_{}_{}_response", trait_name, name);
 
     RustDefMethod {
-        identifier: heck::CamelCase::to_camel_case(name.as_str()),
+        identifier: heck::ToUpperCamelCase::to_upper_camel_case(name.as_str()),
         name,
         client_streaming,
         server_streaming,
