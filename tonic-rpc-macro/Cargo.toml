@@ -1,6 +1,6 @@
 [package]
 name = "tonic-rpc-macro"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Adam Bratschi-Kaye <ark.email@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -16,9 +16,9 @@ Core macro for tonic-rpc.
 proc-macro = true
 
 [dependencies]
-heck = "0.3"
+heck = "0.4"
 itertools = "0.10"
 syn = { version = "1.0", features = ["full"] }
-tonic-build = "0.4"
+tonic-build = "0.7"
 proc-macro2 = "1.0"
 quote = "1.0"

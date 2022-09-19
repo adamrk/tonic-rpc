@@ -4,7 +4,7 @@ use syn::{
     parse_macro_input, punctuated::Pair, FnArg, ItemTrait, ReturnType, TraitItem, TraitItemMethod,
     Type,
 };
-use tonic_build::{Method, Service};
+use tonic_build::{Attributes, Method, Service};
 
 struct RustDefMethod {
     pub name: String,
@@ -213,7 +213,7 @@ fn make_method<T: From<RustDefMethod>>(method: TraitItemMethod, trait_name: &str
         quote::format_ident!("__tonic_generated_{}_{}_response", trait_name, name);
 
     RustDefMethod {
-        identifier: heck::CamelCase::to_camel_case(name.as_str()),
+        identifier: heck::ToUpperCamelCase::to_upper_camel_case(name.as_str()),
         name,
         client_streaming,
         server_streaming,
@@ -247,8 +247,8 @@ where
         name,
         methods,
     };
-    let client = tonic_build::client::generate(&service, false, "", false);
-    let server = tonic_build::server::generate(&service, false, "", false);
+    let client = tonic_build::client::generate(&service, false, "", false, &Attributes::default());
+    let server = tonic_build::server::generate(&service, false, "", false, &Attributes::default());
     let types = service.methods.iter().map(|m| {
         let request_name = m.generated_request();
         let response_name = m.generated_response();

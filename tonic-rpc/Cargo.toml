@@ -1,6 +1,6 @@
 [package]
 name = "tonic-rpc"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Adam Bratschi-Kaye <ark.email@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -24,12 +24,12 @@ messagepack = ["rmp-serde"]
 [dependencies]
 bytes = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tonic = "0.4"
-tonic-rpc-macro = { version = "0.1", path = "../tonic-rpc-macro" }
+tonic = "0.7"
+tonic-rpc-macro = { version = "0.2", path = "../tonic-rpc-macro" }
 
 # optional codecs
 bincode = { version = "1.3", optional = true }
-rmp-serde = { version = "0.15", optional = true }
+rmp-serde = { version = "1.1", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_cbor = { version = "0.11", optional = true }
 
@@ -39,7 +39,7 @@ tokio = { version = "1.4", features = [ "full" ] }
 tokio-stream = { version = "0.1", features = [ "net" ] }
 
 [build-dependencies]
-tonic-build = "0.4"
+tonic-build = "0.7"
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]
