@@ -77,9 +77,11 @@ macro_rules! method_impl {
         }
 
         impl Method for $name {
-            const CODEC_PATH: &'static str = $codec;
             type Comment = String;
 
+            fn codec_path(&self) -> &str {
+                $codec
+            }
             fn name(&self) -> &str {
                 self.0.name()
             }
@@ -121,7 +123,6 @@ struct RustDefService<T> {
 macro_rules! service_impl {
     ($name:ident, $codec:expr) => {
         impl Service for RustDefService<$name> {
-            const CODEC_PATH: &'static str = $codec;
             type Comment = String;
             type Method = $name;
 
