@@ -1,8 +1,6 @@
-#[cfg(feature = "json")]
+mod example;
+
 #[tokio::main]
 async fn main() {
-    example::run_server()
+    example::run_server().await
 }
-
-#[cfg(not(feature = "json"))]
-fn main() {}

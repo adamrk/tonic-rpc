@@ -42,3 +42,7 @@ jobs:
     - uses: actions/checkout@main
     - name: Run tests
       run: cargo test --verbose --all-features
+    - name: Run example
+      run: |
+        cargo run --bin example > log
+        grep '^Got 33$' log
