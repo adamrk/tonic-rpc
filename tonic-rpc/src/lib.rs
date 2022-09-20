@@ -11,8 +11,8 @@
 //!
 //! # Required dependencies
 //! ```toml
-//! tonic = "0.4"
-//! tonic-rpc = { version = "0.1", features = [ <enabled-codecs> ] }
+//! tonic = "0.8"
+//! tonic-rpc = { version = "0.2", features = [ <enabled-codecs> ] }
 //! ```
 //!
 //! # Example
@@ -114,7 +114,7 @@
 //! ```
 //! and include
 //! ```toml
-//! tonic-rpc = { version = "0.1", features = [ "cbor" ]}
+//! tonic-rpc = { version = "0.2", features = [ "cbor" ]}
 //! ```
 //! in `Cargo.toml`.
 //!
