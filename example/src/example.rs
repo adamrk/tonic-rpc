@@ -1,4 +1,3 @@
-#![cfg(feature = "json")]
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
@@ -29,7 +28,7 @@ impl increment_server::Increment for State {
 }
 
 /// Run the server.
-async fn run_server() {
+pub(crate) async fn run_server() {
     let listener = TcpListener::bind("[::1]:8080").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move {
