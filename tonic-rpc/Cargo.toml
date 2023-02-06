@@ -39,7 +39,7 @@ tokio = { version = "1.4", features = [ "full" ] }
 tokio-stream = { version = "0.1", features = [ "net" ] }
 
 [build-dependencies]
-tonic-build = "0.8"
+tonic-build = "0.8.4"
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]
